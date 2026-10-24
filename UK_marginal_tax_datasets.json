@@ -1,0 +1,875 @@
+{
+  "2026-27 UK": {
+    "income tax": [
+      {
+        "name": "basic",
+        "rate": 0.2,
+        "threshold": 37700
+      },
+      {
+        "name": "higher",
+        "rate": 0.4,
+        "threshold": 125140
+      },
+      {
+        "name": "additional",
+        "rate": 0.45
+      }
+    ],
+    "income tax - dividends": [
+      {
+        "name": "basic",
+        "rate": 0.1075,
+        "threshold": 37700
+      },
+      {
+        "name": "higher",
+        "rate": 0.3575,
+        "threshold": 125140
+      },
+      {
+        "name": "additional",
+        "rate": 0.3935
+      }
+    ],
+    "statutory personal allowance": 12570,
+    "allowance withdrawal threshold": 100000,
+    "allowance withdrawal rate": 0.5,
+    "child benefit": {
+      "1st": 27.05,
+      "subsequent": 17.9
+    },
+    "HICBC start": 60000,
+    "HICBC income per percent reduction": 200,
+    "childcare max earnings": 100000,
+    "marriage allowance": 0.1,
+    "marriage allowance max earnings": 50270,
+    "NI class 1 (employees)": [
+      {
+        "name": "below primary threshold",
+        "rate": 0,
+        "threshold": 12570
+      },
+      {
+        "name": "primary threshold",
+        "rate": 0.08,
+        "threshold": 50270
+      },
+      {
+        "name": "upper earnings limit",
+        "rate": 0.02
+      }
+    ],
+    "NI class 4 (self-employed)": [
+      {
+        "name": "below lower profits limit",
+        "rate": 0,
+        "threshold": 12570
+      },
+      {
+        "name": "main rate",
+        "rate": 0.06,
+        "threshold": 50270
+      },
+      {
+        "name": "above upper profits limit",
+        "rate": 0.02
+      }
+    ],
+    "employer NI": {
+      "employer nic rate": 0.15,
+      "employer nic secondary threshold": 96,
+      "employer nic secondary threshold annual": 5000
+    },
+    "pension annual allowance": 60000,
+    "pension AA threshold income limit": 200000,
+    "pension AA adjusted income limit": 260000,
+    "pension AA taper rate": 0.5,
+    "pension AA minimum": 10000,
+    "student loan": {
+      "plan1": {
+        "rate": 0.09,
+        "threshold": 26900
+      },
+      "plan2": {
+        "rate": 0.09,
+        "threshold": 29385
+      },
+      "plan4": {
+        "rate": 0.09,
+        "threshold": 33795
+      },
+      "plan5": {
+        "rate": 0.09,
+        "threshold": 25000
+      },
+      "plan3": {
+        "rate": 0.06,
+        "threshold": 21000
+      }
+    },
+    "pension relief at source rate": 0.2,
+    "pension relief at source basic amount": 3600,
+    "marriage allowance relief rate": 0.2,
+    "_meta": {
+      "kind": "regime",
+      "regimeDate": "2026-04-06",
+      "assumptions": [
+        "Current 2026/27 rules applied to the circumstances entered.",
+        "Childcare is a user-entered household value at risk above £100,000 ANI; eligibility is not assessed.",
+        "Personal pension and marriage relief follow the modelled UK basic rate."
+      ],
+      "sources": {
+        "income tax": "https://www.gov.uk/government/publications/rates-and-allowances-income-tax/income-tax-rates-and-allowances-current-and-past",
+        "national insurance": "https://www.gov.uk/government/publications/rates-and-allowances-national-insurance-contributions/rates-and-allowances-national-insurance-contributions",
+        "child benefit and HICBC": "https://www.gov.uk/child-benefit-tax-charge",
+        "child benefit rates": "https://www.gov.uk/child-benefit/what-youll-get",
+        "childcare threshold": "https://www.gov.uk/tax-free-childcare/check-if-youre-eligible",
+        "student loans": "https://www.gov.uk/government/publications/payroll-technical-specifications-student-loans/collection-of-student-loans-from-6-april-2026",
+        "pension relief": "https://www.gov.uk/tax-on-your-private-pension/pension-tax-relief",
+        "annual allowance": "https://www.gov.uk/tax-on-your-private-pension/annual-allowance",
+        "annual allowance taper": "https://www.gov.uk/guidance/pension-schemes-work-out-your-tapered-annual-allowance",
+        "marriage allowance": "https://www.gov.uk/marriage-allowance"
+      }
+    }
+  },
+  "2026-27 Scotland": {
+    "income tax": [
+      {
+        "name": "starter",
+        "rate": 0.19,
+        "threshold": 3967
+      },
+      {
+        "name": "basic",
+        "rate": 0.2,
+        "threshold": 16956
+      },
+      {
+        "name": "intermediate",
+        "rate": 0.21,
+        "threshold": 31092
+      },
+      {
+        "name": "higher",
+        "rate": 0.42,
+        "threshold": 62430
+      },
+      {
+        "name": "advanced",
+        "rate": 0.45,
+        "threshold": 125140
+      },
+      {
+        "name": "top",
+        "rate": 0.48
+      }
+    ],
+    "income tax - dividends": [
+      {
+        "name": "basic",
+        "rate": 0.1075,
+        "threshold": 37700
+      },
+      {
+        "name": "higher",
+        "rate": 0.3575,
+        "threshold": 125140
+      },
+      {
+        "name": "additional",
+        "rate": 0.3935
+      }
+    ],
+    "statutory personal allowance": 12570,
+    "allowance withdrawal threshold": 100000,
+    "allowance withdrawal rate": 0.5,
+    "child benefit": {
+      "1st": 27.05,
+      "subsequent": 17.9
+    },
+    "HICBC start": 60000,
+    "HICBC income per percent reduction": 200,
+    "childcare max earnings": 100000,
+    "marriage allowance": 0.1,
+    "marriage allowance max earnings": 43662,
+    "NI class 1 (employees)": [
+      {
+        "name": "below primary threshold",
+        "rate": 0,
+        "threshold": 12570
+      },
+      {
+        "name": "primary threshold",
+        "rate": 0.08,
+        "threshold": 50270
+      },
+      {
+        "name": "upper earnings limit",
+        "rate": 0.02
+      }
+    ],
+    "NI class 4 (self-employed)": [
+      {
+        "name": "below lower profits limit",
+        "rate": 0,
+        "threshold": 12570
+      },
+      {
+        "name": "main rate",
+        "rate": 0.06,
+        "threshold": 50270
+      },
+      {
+        "name": "above upper profits limit",
+        "rate": 0.02
+      }
+    ],
+    "employer NI": {
+      "employer nic rate": 0.15,
+      "employer nic secondary threshold": 96,
+      "employer nic secondary threshold annual": 5000
+    },
+    "pension annual allowance": 60000,
+    "pension AA threshold income limit": 200000,
+    "pension AA adjusted income limit": 260000,
+    "pension AA taper rate": 0.5,
+    "pension AA minimum": 10000,
+    "student loan": {
+      "plan1": {
+        "rate": 0.09,
+        "threshold": 26900
+      },
+      "plan2": {
+        "rate": 0.09,
+        "threshold": 29385
+      },
+      "plan4": {
+        "rate": 0.09,
+        "threshold": 33795
+      },
+      "plan5": {
+        "rate": 0.09,
+        "threshold": 25000
+      },
+      "plan3": {
+        "rate": 0.06,
+        "threshold": 21000
+      }
+    },
+    "pension relief at source rate": 0.2,
+    "pension relief at source basic amount": 3600,
+    "marriage allowance relief rate": 0.2,
+    "_meta": {
+      "kind": "regime",
+      "regimeDate": "2026-04-06",
+      "assumptions": [
+        "Current 2026/27 rules applied to the circumstances entered.",
+        "Childcare is a user-entered household value at risk above £100,000 ANI; eligibility is not assessed.",
+        "Personal pension and marriage relief follow the modelled UK basic rate."
+      ],
+      "sources": {
+        "income tax": "https://www.gov.scot/publications/scottish-income-tax-rates-and-bands/pages/2026-to-2027/",
+        "national insurance": "https://www.gov.uk/government/publications/rates-and-allowances-national-insurance-contributions/rates-and-allowances-national-insurance-contributions",
+        "child benefit and HICBC": "https://www.gov.uk/child-benefit-tax-charge",
+        "child benefit rates": "https://www.gov.uk/child-benefit/what-youll-get",
+        "childcare threshold": "https://www.gov.uk/tax-free-childcare/check-if-youre-eligible",
+        "student loans": "https://www.gov.uk/government/publications/payroll-technical-specifications-student-loans/collection-of-student-loans-from-6-april-2026",
+        "pension relief": "https://www.gov.uk/tax-on-your-private-pension/pension-tax-relief",
+        "annual allowance": "https://www.gov.uk/tax-on-your-private-pension/annual-allowance",
+        "annual allowance taper": "https://www.gov.uk/guidance/pension-schemes-work-out-your-tapered-annual-allowance",
+        "marriage allowance": "https://www.gov.uk/marriage-allowance"
+      }
+    }
+  },
+  "Reform UK personal allowance (rUK)": {
+    "income tax": [
+      {
+        "name": "basic",
+        "rate": 0.2,
+        "threshold": 37700
+      },
+      {
+        "name": "higher",
+        "rate": 0.4,
+        "threshold": 125140
+      },
+      {
+        "name": "additional",
+        "rate": 0.45
+      }
+    ],
+    "income tax - dividends": [
+      {
+        "name": "basic",
+        "rate": 0.1075,
+        "threshold": 37700
+      },
+      {
+        "name": "higher",
+        "rate": 0.3575,
+        "threshold": 125140
+      },
+      {
+        "name": "additional",
+        "rate": 0.3935
+      }
+    ],
+    "statutory personal allowance": 15000,
+    "allowance withdrawal threshold": 100000,
+    "allowance withdrawal rate": 0.5,
+    "child benefit": {
+      "1st": 27.05,
+      "subsequent": 17.9
+    },
+    "HICBC start": 60000,
+    "HICBC income per percent reduction": 200,
+    "childcare max earnings": 100000,
+    "marriage allowance": 0.1,
+    "marriage allowance max earnings": 52700,
+    "NI class 1 (employees)": [
+      {
+        "name": "below primary threshold",
+        "rate": 0,
+        "threshold": 12570
+      },
+      {
+        "name": "primary threshold",
+        "rate": 0.08,
+        "threshold": 50270
+      },
+      {
+        "name": "upper earnings limit",
+        "rate": 0.02
+      }
+    ],
+    "NI class 4 (self-employed)": [
+      {
+        "name": "below lower profits limit",
+        "rate": 0,
+        "threshold": 12570
+      },
+      {
+        "name": "main rate",
+        "rate": 0.06,
+        "threshold": 50270
+      },
+      {
+        "name": "above upper profits limit",
+        "rate": 0.02
+      }
+    ],
+    "employer NI": {
+      "employer nic rate": 0.15,
+      "employer nic secondary threshold": 96,
+      "employer nic secondary threshold annual": 5000
+    },
+    "pension annual allowance": 60000,
+    "pension AA threshold income limit": 200000,
+    "pension AA adjusted income limit": 260000,
+    "pension AA taper rate": 0.5,
+    "pension AA minimum": 10000,
+    "student loan": {
+      "plan1": {
+        "rate": 0.09,
+        "threshold": 26900
+      },
+      "plan2": {
+        "rate": 0.09,
+        "threshold": 29385
+      },
+      "plan4": {
+        "rate": 0.09,
+        "threshold": 33795
+      },
+      "plan5": {
+        "rate": 0.09,
+        "threshold": 25000
+      },
+      "plan3": {
+        "rate": 0.06,
+        "threshold": 21000
+      }
+    },
+    "pension relief at source rate": 0.2,
+    "pension relief at source basic amount": 3600,
+    "marriage allowance relief rate": 0.2,
+    "_meta": {
+      "kind": "proposal",
+      "regimeDate": "2026-04-06",
+      "assumptions": [
+        "Current 2026/27 rules applied to the circumstances entered.",
+        "Childcare is a user-entered household value at risk above £100,000 ANI; eligibility is not assessed.",
+        "Personal pension and marriage relief follow the modelled UK basic rate.",
+        "Only the personal allowance changes. The £100,000 taper start, withdrawal rate, taxable income bands and NI thresholds stay unchanged.",
+        "Marriage allowance remains 10% of the personal allowance; its recipient income ceiling moves with the personal allowance.",
+        "The allowance ends at £130,000. With no pension contributions, the additional/top rate starts at £126,760 gross income.",
+        "With taxable bands unchanged, the higher rate starts at £52,700 gross income."
+      ],
+      "sources": {
+        "income tax": "https://www.gov.uk/government/publications/rates-and-allowances-income-tax/income-tax-rates-and-allowances-current-and-past",
+        "national insurance": "https://www.gov.uk/government/publications/rates-and-allowances-national-insurance-contributions/rates-and-allowances-national-insurance-contributions",
+        "child benefit and HICBC": "https://www.gov.uk/child-benefit-tax-charge",
+        "child benefit rates": "https://www.gov.uk/child-benefit/what-youll-get",
+        "childcare threshold": "https://www.gov.uk/tax-free-childcare/check-if-youre-eligible",
+        "student loans": "https://www.gov.uk/government/publications/payroll-technical-specifications-student-loans/collection-of-student-loans-from-6-april-2026",
+        "pension relief": "https://www.gov.uk/tax-on-your-private-pension/pension-tax-relief",
+        "annual allowance": "https://www.gov.uk/tax-on-your-private-pension/annual-allowance",
+        "annual allowance taper": "https://www.gov.uk/guidance/pension-schemes-work-out-your-tapered-annual-allowance",
+        "marriage allowance": "https://www.gov.uk/marriage-allowance",
+        "proposal": "https://www.cityam.com/jenrick-pledges-to-raise-tax-free-personal-allowance-to-15000/"
+      },
+      "baseDataset": "2026-27 UK",
+      "description": "£15,000 personal allowance, with the existing taper and taxable income bands. All other rules use 2026/27."
+    }
+  },
+  "Reform UK personal allowance (Scotland)": {
+    "income tax": [
+      {
+        "name": "starter",
+        "rate": 0.19,
+        "threshold": 3967
+      },
+      {
+        "name": "basic",
+        "rate": 0.2,
+        "threshold": 16956
+      },
+      {
+        "name": "intermediate",
+        "rate": 0.21,
+        "threshold": 31092
+      },
+      {
+        "name": "higher",
+        "rate": 0.42,
+        "threshold": 62430
+      },
+      {
+        "name": "advanced",
+        "rate": 0.45,
+        "threshold": 125140
+      },
+      {
+        "name": "top",
+        "rate": 0.48
+      }
+    ],
+    "income tax - dividends": [
+      {
+        "name": "basic",
+        "rate": 0.1075,
+        "threshold": 37700
+      },
+      {
+        "name": "higher",
+        "rate": 0.3575,
+        "threshold": 125140
+      },
+      {
+        "name": "additional",
+        "rate": 0.3935
+      }
+    ],
+    "statutory personal allowance": 15000,
+    "allowance withdrawal threshold": 100000,
+    "allowance withdrawal rate": 0.5,
+    "child benefit": {
+      "1st": 27.05,
+      "subsequent": 17.9
+    },
+    "HICBC start": 60000,
+    "HICBC income per percent reduction": 200,
+    "childcare max earnings": 100000,
+    "marriage allowance": 0.1,
+    "marriage allowance max earnings": 46092,
+    "NI class 1 (employees)": [
+      {
+        "name": "below primary threshold",
+        "rate": 0,
+        "threshold": 12570
+      },
+      {
+        "name": "primary threshold",
+        "rate": 0.08,
+        "threshold": 50270
+      },
+      {
+        "name": "upper earnings limit",
+        "rate": 0.02
+      }
+    ],
+    "NI class 4 (self-employed)": [
+      {
+        "name": "below lower profits limit",
+        "rate": 0,
+        "threshold": 12570
+      },
+      {
+        "name": "main rate",
+        "rate": 0.06,
+        "threshold": 50270
+      },
+      {
+        "name": "above upper profits limit",
+        "rate": 0.02
+      }
+    ],
+    "employer NI": {
+      "employer nic rate": 0.15,
+      "employer nic secondary threshold": 96,
+      "employer nic secondary threshold annual": 5000
+    },
+    "pension annual allowance": 60000,
+    "pension AA threshold income limit": 200000,
+    "pension AA adjusted income limit": 260000,
+    "pension AA taper rate": 0.5,
+    "pension AA minimum": 10000,
+    "student loan": {
+      "plan1": {
+        "rate": 0.09,
+        "threshold": 26900
+      },
+      "plan2": {
+        "rate": 0.09,
+        "threshold": 29385
+      },
+      "plan4": {
+        "rate": 0.09,
+        "threshold": 33795
+      },
+      "plan5": {
+        "rate": 0.09,
+        "threshold": 25000
+      },
+      "plan3": {
+        "rate": 0.06,
+        "threshold": 21000
+      }
+    },
+    "pension relief at source rate": 0.2,
+    "pension relief at source basic amount": 3600,
+    "marriage allowance relief rate": 0.2,
+    "_meta": {
+      "kind": "proposal",
+      "regimeDate": "2026-04-06",
+      "assumptions": [
+        "Current 2026/27 rules applied to the circumstances entered.",
+        "Childcare is a user-entered household value at risk above £100,000 ANI; eligibility is not assessed.",
+        "Personal pension and marriage relief follow the modelled UK basic rate.",
+        "Only the personal allowance changes. The £100,000 taper start, withdrawal rate, taxable income bands and NI thresholds stay unchanged.",
+        "Marriage allowance remains 10% of the personal allowance; its recipient income ceiling moves with the personal allowance.",
+        "The allowance ends at £130,000. With no pension contributions, the additional/top rate starts at £126,760 gross income.",
+        "With taxable bands unchanged, the 42% higher rate starts at £46,092 gross income."
+      ],
+      "sources": {
+        "income tax": "https://www.gov.scot/publications/scottish-income-tax-rates-and-bands/pages/2026-to-2027/",
+        "national insurance": "https://www.gov.uk/government/publications/rates-and-allowances-national-insurance-contributions/rates-and-allowances-national-insurance-contributions",
+        "child benefit and HICBC": "https://www.gov.uk/child-benefit-tax-charge",
+        "child benefit rates": "https://www.gov.uk/child-benefit/what-youll-get",
+        "childcare threshold": "https://www.gov.uk/tax-free-childcare/check-if-youre-eligible",
+        "student loans": "https://www.gov.uk/government/publications/payroll-technical-specifications-student-loans/collection-of-student-loans-from-6-april-2026",
+        "pension relief": "https://www.gov.uk/tax-on-your-private-pension/pension-tax-relief",
+        "annual allowance": "https://www.gov.uk/tax-on-your-private-pension/annual-allowance",
+        "annual allowance taper": "https://www.gov.uk/guidance/pension-schemes-work-out-your-tapered-annual-allowance",
+        "marriage allowance": "https://www.gov.uk/marriage-allowance",
+        "proposal": "https://www.cityam.com/jenrick-pledges-to-raise-tax-free-personal-allowance-to-15000/"
+      },
+      "baseDataset": "2026-27 Scotland",
+      "description": "£15,000 personal allowance, with the existing taper and taxable income bands. All other rules use 2026/27."
+    }
+  },
+  "Green employee NI (rUK)": {
+    "income tax": [
+      {
+        "name": "basic",
+        "rate": 0.2,
+        "threshold": 37700
+      },
+      {
+        "name": "higher",
+        "rate": 0.4,
+        "threshold": 125140
+      },
+      {
+        "name": "additional",
+        "rate": 0.45
+      }
+    ],
+    "income tax - dividends": [
+      {
+        "name": "basic",
+        "rate": 0.1075,
+        "threshold": 37700
+      },
+      {
+        "name": "higher",
+        "rate": 0.3575,
+        "threshold": 125140
+      },
+      {
+        "name": "additional",
+        "rate": 0.3935
+      }
+    ],
+    "statutory personal allowance": 12570,
+    "allowance withdrawal threshold": 100000,
+    "allowance withdrawal rate": 0.5,
+    "child benefit": {
+      "1st": 27.05,
+      "subsequent": 17.9
+    },
+    "HICBC start": 60000,
+    "HICBC income per percent reduction": 200,
+    "childcare max earnings": 100000,
+    "marriage allowance": 0.1,
+    "marriage allowance max earnings": 50270,
+    "NI class 1 (employees)": [
+      {
+        "name": "below primary threshold",
+        "rate": 0,
+        "threshold": 12570
+      },
+      {
+        "name": "primary threshold",
+        "rate": 0.08,
+        "threshold": 50270
+      },
+      {
+        "name": "upper earnings limit",
+        "rate": 0.08
+      }
+    ],
+    "NI class 4 (self-employed)": [
+      {
+        "name": "below lower profits limit",
+        "rate": 0,
+        "threshold": 12570
+      },
+      {
+        "name": "main rate",
+        "rate": 0.06,
+        "threshold": 50270
+      },
+      {
+        "name": "above upper profits limit",
+        "rate": 0.02
+      }
+    ],
+    "employer NI": {
+      "employer nic rate": 0.15,
+      "employer nic secondary threshold": 96,
+      "employer nic secondary threshold annual": 5000
+    },
+    "pension annual allowance": 60000,
+    "pension AA threshold income limit": 200000,
+    "pension AA adjusted income limit": 260000,
+    "pension AA taper rate": 0.5,
+    "pension AA minimum": 10000,
+    "student loan": {
+      "plan1": {
+        "rate": 0.09,
+        "threshold": 26900
+      },
+      "plan2": {
+        "rate": 0.09,
+        "threshold": 29385
+      },
+      "plan4": {
+        "rate": 0.09,
+        "threshold": 33795
+      },
+      "plan5": {
+        "rate": 0.09,
+        "threshold": 25000
+      },
+      "plan3": {
+        "rate": 0.06,
+        "threshold": 21000
+      }
+    },
+    "pension relief at source rate": 0.2,
+    "pension relief at source basic amount": 3600,
+    "marriage allowance relief rate": 0.2,
+    "_meta": {
+      "kind": "proposal",
+      "regimeDate": "2026-04-06",
+      "assumptions": [
+        "Current 2026/27 rules applied to the circumstances entered.",
+        "Childcare is a user-entered household value at risk above £100,000 ANI; eligibility is not assessed.",
+        "Personal pension and marriage relief follow the modelled UK basic rate.",
+        "Models only the employee NI measure in the Green Party 2024 manifesto, not its wider tax programme.",
+        "The manifesto doesn't say whether removing the upper earnings limit extends to self-employed NI. Self-employed and employer NI are left unchanged."
+      ],
+      "sources": {
+        "income tax": "https://www.gov.uk/government/publications/rates-and-allowances-income-tax/income-tax-rates-and-allowances-current-and-past",
+        "national insurance": "https://www.gov.uk/government/publications/rates-and-allowances-national-insurance-contributions/rates-and-allowances-national-insurance-contributions",
+        "child benefit and HICBC": "https://www.gov.uk/child-benefit-tax-charge",
+        "child benefit rates": "https://www.gov.uk/child-benefit/what-youll-get",
+        "childcare threshold": "https://www.gov.uk/tax-free-childcare/check-if-youre-eligible",
+        "student loans": "https://www.gov.uk/government/publications/payroll-technical-specifications-student-loans/collection-of-student-loans-from-6-april-2026",
+        "pension relief": "https://www.gov.uk/tax-on-your-private-pension/pension-tax-relief",
+        "annual allowance": "https://www.gov.uk/tax-on-your-private-pension/annual-allowance",
+        "annual allowance taper": "https://www.gov.uk/guidance/pension-schemes-work-out-your-tapered-annual-allowance",
+        "marriage allowance": "https://www.gov.uk/marriage-allowance",
+        "proposal": "https://greenparty.org.uk/2024/06/12/greens-pledge-investment-to-mend-broken-britain/"
+      },
+      "baseDataset": "2026-27 UK",
+      "description": "8% employee NI above £50,270, instead of 2%. All other rules use 2026/27."
+    }
+  },
+  "Green employee NI (Scotland)": {
+    "income tax": [
+      {
+        "name": "starter",
+        "rate": 0.19,
+        "threshold": 3967
+      },
+      {
+        "name": "basic",
+        "rate": 0.2,
+        "threshold": 16956
+      },
+      {
+        "name": "intermediate",
+        "rate": 0.21,
+        "threshold": 31092
+      },
+      {
+        "name": "higher",
+        "rate": 0.42,
+        "threshold": 62430
+      },
+      {
+        "name": "advanced",
+        "rate": 0.45,
+        "threshold": 125140
+      },
+      {
+        "name": "top",
+        "rate": 0.48
+      }
+    ],
+    "income tax - dividends": [
+      {
+        "name": "basic",
+        "rate": 0.1075,
+        "threshold": 37700
+      },
+      {
+        "name": "higher",
+        "rate": 0.3575,
+        "threshold": 125140
+      },
+      {
+        "name": "additional",
+        "rate": 0.3935
+      }
+    ],
+    "statutory personal allowance": 12570,
+    "allowance withdrawal threshold": 100000,
+    "allowance withdrawal rate": 0.5,
+    "child benefit": {
+      "1st": 27.05,
+      "subsequent": 17.9
+    },
+    "HICBC start": 60000,
+    "HICBC income per percent reduction": 200,
+    "childcare max earnings": 100000,
+    "marriage allowance": 0.1,
+    "marriage allowance max earnings": 43662,
+    "NI class 1 (employees)": [
+      {
+        "name": "below primary threshold",
+        "rate": 0,
+        "threshold": 12570
+      },
+      {
+        "name": "primary threshold",
+        "rate": 0.08,
+        "threshold": 50270
+      },
+      {
+        "name": "upper earnings limit",
+        "rate": 0.08
+      }
+    ],
+    "NI class 4 (self-employed)": [
+      {
+        "name": "below lower profits limit",
+        "rate": 0,
+        "threshold": 12570
+      },
+      {
+        "name": "main rate",
+        "rate": 0.06,
+        "threshold": 50270
+      },
+      {
+        "name": "above upper profits limit",
+        "rate": 0.02
+      }
+    ],
+    "employer NI": {
+      "employer nic rate": 0.15,
+      "employer nic secondary threshold": 96,
+      "employer nic secondary threshold annual": 5000
+    },
+    "pension annual allowance": 60000,
+    "pension AA threshold income limit": 200000,
+    "pension AA adjusted income limit": 260000,
+    "pension AA taper rate": 0.5,
+    "pension AA minimum": 10000,
+    "student loan": {
+      "plan1": {
+        "rate": 0.09,
+        "threshold": 26900
+      },
+      "plan2": {
+        "rate": 0.09,
+        "threshold": 29385
+      },
+      "plan4": {
+        "rate": 0.09,
+        "threshold": 33795
+      },
+      "plan5": {
+        "rate": 0.09,
+        "threshold": 25000
+      },
+      "plan3": {
+        "rate": 0.06,
+        "threshold": 21000
+      }
+    },
+    "pension relief at source rate": 0.2,
+    "pension relief at source basic amount": 3600,
+    "marriage allowance relief rate": 0.2,
+    "_meta": {
+      "kind": "proposal",
+      "regimeDate": "2026-04-06",
+      "assumptions": [
+        "Current 2026/27 rules applied to the circumstances entered.",
+        "Childcare is a user-entered household value at risk above £100,000 ANI; eligibility is not assessed.",
+        "Personal pension and marriage relief follow the modelled UK basic rate.",
+        "Models only the employee NI measure in the Green Party 2024 manifesto, not its wider tax programme.",
+        "The manifesto doesn't say whether removing the upper earnings limit extends to self-employed NI. Self-employed and employer NI are left unchanged."
+      ],
+      "sources": {
+        "income tax": "https://www.gov.scot/publications/scottish-income-tax-rates-and-bands/pages/2026-to-2027/",
+        "national insurance": "https://www.gov.uk/government/publications/rates-and-allowances-national-insurance-contributions/rates-and-allowances-national-insurance-contributions",
+        "child benefit and HICBC": "https://www.gov.uk/child-benefit-tax-charge",
+        "child benefit rates": "https://www.gov.uk/child-benefit/what-youll-get",
+        "childcare threshold": "https://www.gov.uk/tax-free-childcare/check-if-youre-eligible",
+        "student loans": "https://www.gov.uk/government/publications/payroll-technical-specifications-student-loans/collection-of-student-loans-from-6-april-2026",
+        "pension relief": "https://www.gov.uk/tax-on-your-private-pension/pension-tax-relief",
+        "annual allowance": "https://www.gov.uk/tax-on-your-private-pension/annual-allowance",
+        "annual allowance taper": "https://www.gov.uk/guidance/pension-schemes-work-out-your-tapered-annual-allowance",
+        "marriage allowance": "https://www.gov.uk/marriage-allowance",
+        "proposal": "https://greenparty.org.uk/2024/06/12/greens-pledge-investment-to-mend-broken-britain/"
+      },
+      "baseDataset": "2026-27 Scotland",
+      "description": "8% employee NI above £50,270, instead of 2%. All other rules use 2026/27."
+    }
+  }
+}

@@ -1,0 +1,255 @@
+<!--
+(c) Tax Policy Associates Ltd, 2026, licensed under the MIT licence.
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software,
+to use it however they wish provided they attribute it to Tax Policy Associates Ltd.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UK Tax Calculator 2026/27: Take-Home Pay and Marginal Rates</title>
+    <meta name="robots" content="noindex, indexifembedded, follow">
+    <link rel="icon" href="favicon.png" type="image/png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main id="app" class="app" v-cloak>
+    <section class="panel load-error" v-if="loadError" role="alert">
+        <h1>The calculator could not load</h1>
+        <p>The tax rules could not be loaded. Please reload to try again.</p>
+        <button class="action" type="button" @click="reload">Reload calculator</button>
+    </section>
+    <template v-if="ready">
+    <p class="sr-only" role="status" aria-live="polite" aria-atomic="true">{{ announcement }}</p>
+    <a class="masthead" href="https://taxpolicy.org.uk/uk-tax-calculator/"><img src="logo_standard.png" alt="Tax Policy Associates: about this calculator" width="2039" height="678"></a>
+
+    <section class="cockpit" aria-label="Calculator">
+        <div class="cp-pay">
+            <form class="pay" @submit.prevent="commitIncome">
+                <label class="pay__label" for="income">{{ incomeLabel }}</label>
+                <div class="pay__field">
+                    <span class="pay__prefix" aria-hidden="true">£</span>
+                    <input id="income" ref="incomeInput" class="pay__input" type="text" inputmode="decimal"
+                           autocomplete="off" :value="incomeDisplay" :aria-invalid="!!incomeError"
+                           aria-describedby="income-error" @input="onIncomeInput" @focus="onIncomeFocus" @blur="commitIncome">
+                    <span class="pay__suffix" aria-hidden="true">a year</span>
+                </div>
+                <p id="income-error" class="field-error" v-if="incomeError" role="alert">{{ incomeError }}</p>
+            </form>
+            <div class="range-wrap">
+                <input class="range" type="range" :min="0" :max="sliderMax" :step="1000" :style="sliderFill"
+                       :value="income" @input="onSlider" aria-label="Adjust annual income" :aria-valuetext="fmtMoney(income)">
+                <div class="notches">
+                    <button v-for="n in sliderNotches" :key="n.id" type="button" class="notch" :class="{ 'is-active': n.active }"
+                            :style="{ '--at': n.pct }" @click="income = n.value; incomeError = ''" :aria-label="n.label + ': set income to ' + fmtMoney(n.value)">
+                        <span class="notch__label">{{ n.label }}</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="cp-home">
+            <p class="home">
+                <span class="home__lead">You take home</span>
+                <span class="home__line"><span class="home__figure" role="text" :aria-label="fmtMoney(headlineTakeHome)"><span v-for="(ch, i) in fmtMoney(headlineTakeHome)" :key="fmtMoney(headlineTakeHome).length - i" aria-hidden="true" :class="/[0-9]/.test(ch) ? 'roll' : 'roll-static'"><span v-if="/[0-9]/.test(ch)" class="roll__strip" :style="{ '--d': ch }"><span v-for="n in 10" :key="n">{{ n - 1 }}</span></span><template v-else>{{ ch }}</template></span></span><sup class="home__incl" v-if="summary.childcareCredit > 0">including childcare</sup></span>
+                <span class="home__per">a year, or <b>{{ fmtMoney(headlineTakeHome / 12) }}</b> a month</span>
+            </p>
+            <div class="split" aria-hidden="true">
+                <span v-for="p in takeHomeSplit" :key="p.key" class="split__seg" :class="'is-' + p.key" :style="{ flexBasis: p.pct + '%' }"></span>
+            </div>
+            <ul class="ledger" aria-label="Where your pay goes">
+                <li v-for="p in takeHomeSplit.slice(1)" :key="p.key"><i class="swatch-dot" :class="'is-' + p.key"></i><span>{{ p.label }}</span><b>{{ fmtMoney(p.amount) }}</b></li>
+                <li class="is-credit" v-if="summary.childcareCredit > 0"><i class="swatch-dot is-credit"></i><span>Childcare support</span><b>+{{ fmtMoney(summary.childcareCredit) }}</b></li>
+            </ul>
+        </div>
+
+        <dl class="cp-rates">
+            <div class="rate"><dt>Marginal tax rate<button type="button" class="info" :class="{ 'is-open': openTip === 'marginal' }" aria-label="What is the marginal tax rate?" :aria-expanded="openTip === 'marginal'" aria-describedby="tip-marginal" @click="openTip = openTip === 'marginal' ? null : 'marginal'" @keydown.esc="openTip = null" @blur="openTip = null"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6"/><circle cx="12" cy="7.5" r=".9" fill="currentColor" stroke="none"/></svg><span class="info__tip info__tip--marginal" id="tip-marginal" role="tooltip">How much of your next £1 of pay you lose: in income tax, national insurance and student loan repayments, and in allowances and benefits withdrawn as you earn more.</span></button></dt><dd>{{ fmtPct(summary.marginalRate) }}</dd></div>
+            <div class="rate"><dt>Effective tax rate<button type="button" class="info" :class="{ 'is-open': openTip === 'effective' }" aria-label="What is the effective tax rate?" :aria-expanded="openTip === 'effective'" aria-describedby="tip-effective" @click="openTip = openTip === 'effective' ? null : 'effective'" @keydown.esc="openTip = null" @blur="openTip = null"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6"/><circle cx="12" cy="7.5" r=".9" fill="currentColor" stroke="none"/></svg><span class="info__tip info__tip--effective" id="tip-effective" role="tooltip">Everything you pay in income tax, national insurance and student loan repayments, less any child benefit, childcare support and pension tax relief you receive, as a share of all your income.</span></button></dt><dd>{{ fmtPct(summary.effectiveRate) }}</dd></div>
+            <div class="rate rate--wide" v-if="pensionActive && summary.pensionNetCost >= 0"><dt>{{ fmtMoney(summary.pensionGross) }} into your pension costs you</dt><dd>{{ fmtMoney(summary.pensionNetCost) }}</dd></div>
+            <div class="rate rate--wide" v-if="pensionActive && summary.pensionNetCost < 0"><dt>{{ fmtMoney(summary.pensionGross) }} into your pension leaves you better off by</dt><dd>{{ fmtMoney(-summary.pensionNetCost) }}</dd></div>
+        </dl>
+
+        <div class="cp-about">
+            <div class="row">
+                <label class="row__label" for="employment">Paid as</label>
+                <select id="employment" class="row__select" v-model="household.employmentType"><option v-for="t in employmentTypes" :key="t" :value="t">{{ t }}</option></select>
+            </div>
+            <div class="row">
+                <span class="row__label">Where you live</span>
+                <div class="toggle" role="group" aria-label="Where you live">
+                    <button type="button" :class="{'is-on': !scotland}" :aria-pressed="!scotland" @click="scotland = false">Rest of UK</button>
+                    <button type="button" :class="{'is-on': scotland}" :aria-pressed="scotland" @click="scotland = true">Scotland</button>
+                </div>
+            </div>
+            <div class="row">
+                <span class="row__label" id="kids-label">Children on child benefit</span>
+                <div class="stepper" role="group" aria-labelledby="kids-label">
+                    <button type="button" aria-label="One fewer child" :disabled="household.children <= 0" @click="household.children--"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h12"/></svg></button>
+                    <output aria-live="polite">{{ household.children }}</output>
+                    <button type="button" aria-label="One more child" :disabled="household.children >= 6" @click="household.children++"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h12M12 6v12"/></svg></button>
+                </div>
+            </div>
+            <div class="row">
+                <label class="row__label" for="marriage">Marriage allowance received</label>
+                <span class="switch"><input id="marriage" type="checkbox" role="switch" v-model="household.includeMarriageAllowance"><span aria-hidden="true"></span></span>
+            </div>
+            <div class="extras" role="group" aria-label="Pension, student loan and childcare">
+                <button type="button" class="extra" :class="{ 'is-set': pensionActive, 'is-open': openPanel === 'pension' }" :aria-expanded="openPanel === 'pension'" aria-controls="panel-pension" @click="openPanel = openPanel === 'pension' ? null : 'pension'">
+                    <span class="extra__label">Pension</span>
+                    <span class="extra__state">{{ pensionActive ? fmtMoney(summary.pensionGross) : 'Add' }}</span>
+                </button>
+                <button type="button" class="extra" :class="{ 'is-set': household.includeStudentLoan, 'is-open': openPanel === 'loan' }" :aria-expanded="openPanel === 'loan'" aria-controls="panel-loan" @click="openPanel = openPanel === 'loan' ? null : 'loan'">
+                    <span class="extra__label">Student loan</span>
+                    <span class="extra__state">{{ household.includeStudentLoan ? loanShort : 'Add' }}</span>
+                </button>
+                <button type="button" class="extra" :class="{ 'is-set': household.childcareSubsidyAmount > 0, 'is-open': openPanel === 'childcare' }" :aria-expanded="openPanel === 'childcare'" aria-controls="panel-childcare" @click="openPanel = openPanel === 'childcare' ? null : 'childcare'">
+                    <span class="extra__label">Childcare</span>
+                    <span class="extra__state">{{ household.childcareSubsidyAmount > 0 ? fmtMoney(household.childcareSubsidyAmount) : 'Add' }}</span>
+                </button>
+            </div>
+            <div class="extra-panel" id="panel-pension" v-show="openPanel === 'pension'"><div class="subpanel" v-if="pensionEnabled">
+                <div class="subpanel__head">
+                    <h2>Pension contributions</h2>
+                    <div class="segmented segmented--sm" role="group" aria-label="Pension contribution basis">
+                        <button type="button" class="segmented__btn" :class="{'is-active': household.pensionBasis==='amount'}" :aria-pressed="household.pensionBasis==='amount'" @click="setPensionBasis('amount')">£ a year</button>
+                        <button type="button" class="segmented__btn" :class="{'is-active': household.pensionBasis==='percent'}" :aria-pressed="household.pensionBasis==='percent'" @click="setPensionBasis('percent')">% of pay</button>
+                    </div>
+                </div>
+                <div class="controls">
+                    <div class="control">
+                        <label for="pension">{{ household.pensionBasis === 'percent' ? 'Percentage of gross pay' : 'Gross amount into your pension' }}</label>
+                        <div class="salary__field salary__field--sm">
+                            <span class="salary__prefix" aria-hidden="true">{{ household.pensionBasis === 'percent' ? '%' : '£' }}</span>
+                            <input id="pension" class="salary__input" type="text" inputmode="decimal" autocomplete="off"
+                                   :value="pensionEditing || pensionError ? pensionText : pensionDisplay" @input="onPensionInput" @focus="onPensionFocus" @blur="onPensionBlur" :aria-invalid="!!pensionError" aria-describedby="pension-hint pension-error">
+                        </div>
+                        <p id="pension-error" class="field-error" v-if="pensionError" role="alert">{{ pensionError }}</p>
+                    </div>
+                    <div class="control">
+                        <label for="pension-method">How it's paid</label>
+                        <select id="pension-method" v-model="household.pensionMethod">
+                            <option v-if="workplacePension" value="sacrifice">Salary sacrifice</option>
+                            <option v-if="workplacePension" value="netpay">Workplace pension (net pay)</option>
+                            <option value="sipp">SIPP or personal pension</option>
+                        </select>
+                    </div>
+                </div>
+                <p id="pension-hint" class="hint">Enter the total going into your pension, including any basic-rate top-up, but excluding other employer contributions.</p>
+                <p class="hint" v-if="pensionActive && household.pensionMethod === 'sacrifice'">Your employer must offer salary sacrifice, and your remaining pay must meet minimum-wage rules.</p>
+                <p class="notice notice--warn" v-if="pensionCapNotice">{{ pensionCapNotice }}</p>
+                <p class="hint" v-if="pensionActive && summary.pensionMethod === 'relief_at_source'">You pay {{ fmtMoney(summary.pensionEmployeeOutlay) }} to the provider. Extra tax relief may need claiming from HMRC.</p>
+                <p class="notice notice--warn" v-if="allowanceExcess > 0">This exceeds your {{ fmtMoney(summary.annualAllowance.allowance) }} annual allowance by {{ fmtMoney(allowanceExcess) }}. An annual allowance charge is included; unused allowance carried forward could reduce it.</p>
+            </div>
+            <p class="hint" v-else>Pension contributions from pension income aren't modelled.</p></div>
+            <div class="extra-panel" id="panel-loan" v-show="openPanel === 'loan'">
+                <div class="control control--check"><input id="student-loan" type="checkbox" v-model="household.includeStudentLoan"><label for="student-loan">I have a student loan</label></div>
+                <div class="control" v-if="household.includeStudentLoan"><label for="loan-plan">Which plan</label><select id="loan-plan" v-model="household.studentLoanPlan"><option v-for="p in loanPlans" :key="p.id" :value="p.id">{{ p.label }}</option></select></div>
+            </div>
+            <div class="extra-panel" id="panel-childcare" v-show="openPanel === 'childcare'"><div class="subpanel">
+                <div class="subpanel__head childcare-heading">
+                    <h2><label for="childcare">Childcare support</label></h2>
+                    <button type="button" class="help-toggle" :aria-expanded="childcareHelpOpen" aria-controls="childcare-help" aria-label="About childcare support" title="About childcare support" @click="childcareHelpOpen = !childcareHelpOpen">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6"/><circle cx="12" cy="7.5" r=".8" fill="currentColor" stroke="none"/></svg>
+                    </button>
+                </div>
+                <p id="childcare-help" class="help-text" v-if="childcareHelpOpen">Enter the total annual support your household would lose above £100,000 adjusted net income. Use your <a href="https://www.gov.uk/tax-free-childcare" target="_blank" rel="noopener">Tax-Free Childcare account</a> and ask your nursery what replacing the lost funded hours would cost. For three- and four-year-olds in England, count the extra 15 hours, not the universal 15. Younger children can lose all 30 working-parent hours. <a href="https://www.gov.uk/free-childcare-if-working/check-youre-eligible" target="_blank" rel="noopener">Check the funded-hours rules</a>.<template v-if="scotland"> Scotland's funded hours have no income limit, so in Scotland count only Tax-Free Childcare.</template> Only include support actually at risk for your family; eligibility and your partner's income aren't checked here.</p>
+                <select class="standalone-select" id="childcare" v-model.number="household.childcareSubsidyAmount" aria-describedby="childcare-hint"><option v-for="opt in childcareOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option></select>
+                <p id="childcare-hint" class="hint">Total annual amount at risk above £100,000, for your whole household.</p>
+            </div></div>
+        </div>
+
+        <div class="cp-stage">
+            <header class="stage__head">
+                <div class="tabs" role="group" aria-label="Chart type"><button v-for="opt in chartTypes" :key="opt.id" type="button" class="tabs__btn" :class="{'is-on': chartType === opt.id}" :aria-pressed="chartType === opt.id" @click="chartType = opt.id">{{ opt.label }}</button></div>
+                <label class="compare-pick"><span>Compare with</span><select id="compare" v-model="compareDataset">
+                        <option :value="null">None</option>
+                        <optgroup label="Current rules (2026/27)">
+                            <option v-for="d in yearDatasets" :key="d" :value="d">{{ datasetLabel(d) }}</option>
+                        </optgroup>
+                        <optgroup label="Party proposals (2026/27 baseline)">
+                            <option v-for="d in proposalDatasets" :key="d" :value="d">{{ datasetLabel(d) }}</option>
+                        </optgroup>
+                    </select></label>
+            </header>
+            <div class="chart-wrap">
+            <div ref="chart" class="chart" tabindex="0" role="slider" aria-label="Income on the chart" aria-describedby="chart-keys" :aria-valuemin="0" :aria-valuemax="chartMax" :aria-valuenow="income" :aria-valuetext="chartValueText" @keydown.right.prevent="nudgeIncome(1, $event.shiftKey)" @keydown.up.prevent="nudgeIncome(1, $event.shiftKey)" @keydown.left.prevent="nudgeIncome(-1, $event.shiftKey)" @keydown.down.prevent="nudgeIncome(-1, $event.shiftKey)" @keydown.page-up.prevent="nudgeIncome(1, true)" @keydown.page-down.prevent="nudgeIncome(-1, true)"></div><p class="chart-keys" id="chart-keys"><kbd>&larr;</kbd><kbd>&rarr;</kbd> move £1,000 <span>&middot;</span> <kbd>Shift</kbd> £10,000</p>
+            <div class="chart-tools" role="group" aria-label="Download chart">
+                <button class="chart-tool" type="button" aria-label="Download chart image" title="Download chart image" :disabled="!!incomeError || !!pensionError || exportingImage" @click="requestExport('image')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M3 7h4l2-3h6l2 3h4v13H3Z"/><circle cx="12" cy="13" r="4"/></svg>
+                    <span class="chart-tool__tooltip" aria-hidden="true">Download chart image</span>
+                </button>
+                <button class="chart-tool" type="button" aria-label="Download chart data" title="Download chart data" :disabled="!!incomeError || !!pensionError" @click="requestExport('data')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>
+                    <span class="chart-tool__tooltip" aria-hidden="true">Download chart data</span>
+                </button>
+            </div>
+        </div>
+            <div class="export-confirm" v-if="exportConfirm" role="alertdialog" aria-modal="false" aria-labelledby="export-title" aria-describedby="export-body" @keydown.esc="cancelExport">
+                <h3 id="export-title">This download includes what you entered</h3>
+                <p id="export-body">Nothing you enter in this calculator is sent over the internet: it stays on your device. The {{ exportConfirm === 'image' ? 'image' : 'data file' }} you're about to download shows your figures, including your income. If that's sensitive, take care where you save it and who you share it with.</p>
+                <div class="export-confirm__actions">
+                    <button type="button" class="btn btn--quiet" @click="cancelExport">Cancel</button>
+                    <button type="button" class="btn btn--primary" ref="exportOk" @click="confirmExport">Download</button>
+                </div>
+            </div>
+            <p class="chart-legend" v-if="compareDataset"><span class="legend-item"><i class="swatch-line"></i>{{ datasetLabel(dataset) }}</span><span class="legend-item"><i class="swatch-line is-compare"></i>{{ datasetLabel(compareDataset) }}</span></p>
+            <p class="chart-note" v-if="childcareCliff !== null">Childcare support is lost once gross income exceeds {{ childcareCliffText }}: {{ fmtMoney(household.childcareSubsidyAmount) }} of annual support is at risk.</p>
+            <p class="chart-note" v-if="chartType === 'marginal' && axisFloor() < 0">Below 0%, pension tax relief on the next £1 exceeds the tax on it.</p>
+            <div class="way-out" v-if="wayOut" role="status">
+                <p>{{ wayOut.trap }}. Paying {{ wayOut.more ? 'an extra ' : '' }}<b>{{ fmtMoney(wayOut.extra) }}</b> {{ wayOut.how }} would take you out of it,
+                   <template v-if="wayOut.cost > 0">and would cost you <b>{{ fmtMoney(wayOut.cost) }}</b> of take-home pay.</template>
+                   <template v-else>and would leave you <b>{{ fmtMoney(-wayOut.cost) }}</b> better off.</template></p>
+                <button type="button" class="btn btn--primary btn--sm" @click="applyWayOut">Show me</button>
+                <button type="button" class="way-out__close" aria-label="Dismiss" @click="wayOutDismissed = true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+            </div>
+            <label class="compare-pick compare-pick--m"><span>Compare with</span><select v-model="compareDataset">
+                        <option :value="null">None</option>
+                        <optgroup label="Current rules (2026/27)">
+                            <option v-for="d in yearDatasets" :key="d" :value="d">{{ datasetLabel(d) }}</option>
+                        </optgroup>
+                        <optgroup label="Party proposals (2026/27 baseline)">
+                            <option v-for="d in proposalDatasets" :key="d" :value="d">{{ datasetLabel(d) }}</option>
+                        </optgroup>
+                    </select></label>
+        </div>
+    </section>
+
+        <section class="detail" id="detail" aria-labelledby="detail-heading">
+
+        <h2 id="detail-heading">How the calculation works</h2>
+        <p class="verdict" v-if="compareSummary" :class="compareDelta > 0.5 ? 'is-up' : compareDelta < -0.5 ? 'is-down' : ''">
+            Under <span class="verdict__name">{{ datasetLabel(compareDataset) }}</span>,
+            <template v-if="Math.abs(compareDelta) < 0.5">you'd be no better or worse off.</template>
+            <template v-else>you'd be <b>{{ fmtMoney(Math.abs(compareDelta)) }} a year {{ compareDelta > 0 ? 'better off' : 'worse off' }}</b>.</template>
+        </p>
+        <div class="ledger-grid" :class="{ 'is-comparing': compareSummary }">
+            <table class="calc" v-for="t in detailTables" :key="t.title">
+                <thead><tr>
+                    <th scope="col">{{ t.title }}</th>
+                    <th scope="col" class="col-cur"><span class="col-key"><i></i>{{ compareSummary ? datasetLabel(dataset) : '' }}</span></th>
+                    <th scope="col" class="col-cmp" v-if="compareSummary"><span class="col-key"><i></i>{{ datasetLabel(compareDataset) }}</span></th>
+                </tr></thead>
+                <tbody>
+                    <tr v-for="r in t.rows" :key="r.label" :class="r.kind ? 'is-' + r.kind : ''">
+                        <th scope="row">{{ r.label }}</th>
+                        <td class="col-cur">{{ r.cur === null ? '–' : (Math.round(r.cur) < 0 ? '−' : '') + fmtMoney(Math.abs(r.cur)) }}</td>
+                        <td class="col-cmp" v-if="compareSummary" :class="{ 'is-diff': r.cmp !== null && r.cur !== null && Math.abs(r.cmp - r.cur) >= 0.5 }">{{ r.cmp === null ? '–' : (Math.round(r.cmp) < 0 ? '−' : '') + fmtMoney(Math.abs(r.cmp)) }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+    </section>
+    </template>
+</main>
+<script src="echarts.min.js"></script>
+<script src="vue.global.prod.js"></script>
+<script src="taxEngine.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
