@@ -109,6 +109,10 @@ const APP_OPTIONS = {
             employmentTypes: ['Employed', 'Self-employed', 'Partnership/LLP', 'Within IR35', 'Working past State Pension age', 'Pension income'],
             household: TaxEngine.household({}),
             chart: null,
+            // On a phone the floating tooltip would cover the chart, so the values
+            // under the finger go in a strip above it instead.
+            compactChart: false,
+            scrubGross: null,
             hasAnimatedIn: false,
             frame: null,
             pendingReplay: false,
@@ -253,7 +257,7 @@ const APP_OPTIONS = {
             if (this.household.employmentType === 'Within IR35') return 'Annual contract income, including employer NI';
             if (TaxEngine.isSelfEmploymentType(this.household)) return 'Annual profit before tax';
             if (this.household.employmentType === 'Pension income') return 'Annual pension income before tax';
-            return 'Annual pay before tax and pension';
+            return 'Annual income before tax and pension contributions';
         },
         childcareCliff() { return this.activeData ? TaxEngine.childcareCliff(this.activeData, this.household, this.chartMax) : null; },
         comparisonNote() {
@@ -388,6 +392,25 @@ const APP_OPTIONS = {
             const what = this.chartType === 'effective' ? 'effective tax rate' : 'marginal tax rate';
             return `${this.fmtMoney(this.income)}: ${what} ${this.fmtPct(rate)}, take-home ${this.fmtMoney(this.headlineTakeHome)}${this.summary.childcareCredit > 0 ? ' including childcare' : ''}`;
         },
+        // the phone readout: the plotted values at the income under the finger
+        chartReadout() {
+            if (this.scrubGross === null || !this.curve) return null;
+            const gross = this.curve.gross;
+            let lo = 0, hi = gross.length - 1;
+            while (hi - lo > 1) {
+                const mid = (lo + hi) >> 1;
+                if (gross[mid] <= this.scrubGross) lo = mid; else hi = mid;
+            }
+            const i = Math.abs(gross[hi] - this.scrubGross) < Math.abs(gross[lo] - this.scrubGross) ? hi : lo;
+            const isRate = this.chartType !== 'net';
+            const show = v => (isRate ? this.fmtPct(v) : this.fmtMoney(v));
+            const curves = this.compareCurve ? [this.curve, this.compareCurve] : [this.curve];
+            return {
+                gross: this.fmtMoney(gross[i]),
+                what: { marginal: 'marginal rate', effective: 'effective rate', net: 'take-home' }[this.chartType],
+                values: curves.map(c => show(this.seriesFor(c)[i]))
+            };
+        },
         // the headline counts childcare support kept, as the chart's net line does
         headlineTakeHome() { return Math.round(this.summary.cashTakeHome) + Math.round(this.summary.childcareCredit || 0); },
         // everything the user has set, in words, for the exports
@@ -504,6 +527,11 @@ const APP_OPTIONS = {
         this.ready = true;
         await this.$nextTick();
         this.chart = markRaw(echarts.init(this.$refs.chart, null, { renderer: 'canvas' }));
+        this.chart.on('updateAxisPointer', (e) => {
+            const x = e.axesInfo && e.axesInfo[0] && e.axesInfo[0].value;
+            if (Number.isFinite(x)) this.scrubGross = x;
+        });
+        this.compactChart = this.isCompact();
         if (typeof ResizeObserver !== 'undefined') {
             this.resizeObserver = markRaw(new ResizeObserver(() => this.onResize()));
             this.resizeObserver.observe(this.$refs.chart);
@@ -872,7 +900,16 @@ const APP_OPTIONS = {
             return name;
         },
 
-        onResize() { if (this.chart) this.chart.resize({ animation: { duration: 0 } }); },
+        isCompact() { return typeof window.matchMedia === 'function' && window.matchMedia('(max-width: 760px)').matches; },
+        onResize() {
+            if (!this.chart) return;
+            this.chart.resize({ animation: { duration: 0 } });
+            const compact = this.isCompact();
+            if (compact !== this.compactChart) {
+                this.compactChart = compact;
+                this.drawChart();
+            }
+        },
 
         /* ---------------- chart ---------------- */
 
@@ -1019,6 +1056,7 @@ const APP_OPTIONS = {
                 grid: { left: 8, right: 18, top: 26, bottom: 8, containLabel: true },
                 tooltip: {
                     trigger: 'axis',
+                    showContent: !this.compactChart,
                     confine: true,
                     axisPointer: {
                         type: 'line',

@@ -1074,3 +1074,24 @@ html.is-framed .cockpit, html.is-framed .detail { box-shadow: 0 1px 2px rgba(16,
 .masthead:focus-visible { outline: 2px solid var(--series-1); outline-offset: 3px; }
 @media (max-width: 760px) { .masthead img { height: 28px; } }
 html.is-framed .masthead { display: none; }
+
+/* ---------- Round 6: phone chart readout and scrubbing ---------- */
+/* A sideways drag on the chart moves the crosshair; a vertical one still scrolls the page. */
+.chart { touch-action: pan-y; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+.chart-readout { display: flex; align-items: center; gap: 4px 10px; margin: 2px 0 0; min-height: 1.6rem; font-size: .8rem; color: var(--ink-2); white-space: nowrap; overflow: hidden; font-variant-numeric: tabular-nums; }
+.chart-readout b { font-weight: 600; color: var(--ink); }
+.chart-readout__v { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; color: var(--ink); }
+.chart-readout__hint { color: var(--ink-3); overflow: hidden; text-overflow: ellipsis; }
+/* Keep the phone comparison picker clear of the download icons pinned at the panel's bottom right */
+@media (max-width: 760px) { .cp-stage .compare-pick--m { padding-right: 80px; } }
+
+/* ---------- Round 7: what income the calculator covers ---------- */
+/* The label wraps on a phone, so the tip hangs from the whole row rather than the icon */
+.pay__head { position: relative; display: flex; align-items: center; gap: 3px; margin-bottom: 6px; }
+.pay__head .pay__label { margin-bottom: 0; }
+.info--pay { position: static; flex: none; }
+.info__tip--pay { left: 0; right: 0; width: auto; max-width: 340px; }
+@media (max-width: 760px) {
+    .pay__head { margin-bottom: 4px; }
+    .info__tip--pay { width: auto; }
+}
