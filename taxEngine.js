@@ -105,7 +105,24 @@ of a spurious 98.2% reading in the 2025 chart.
         // is how people think about escaping a specific trap.
         pensionContribution: 0,
         pensionBasis: 'amount',        // 'amount' | 'percent'
-        pensionMethod: 'sacrifice'     // see RELIEF_AT_SOURCE_METHODS
+        pensionMethod: 'sacrifice',    // see RELIEF_AT_SOURCE_METHODS
+        // Fixed annual amounts alongside the main income. None of them moves along
+        // the chart: the x-axis is always the main income.
+        benefitCar: 0,                 // taxable benefits in kind (employees only)
+        benefitMedical: 0,
+        benefitOther: 0,
+        statePension: 0,               // pension income on top of the main income
+        privatePension: 0,
+        savingsInterest: 0,            // investment income and gains
+        dividendIncome: 0,
+        capitalGains: 0,
+        rentalIncome: 0,               // gross rent from property let personally
+        rentalExpenses: 0,             // allowable running costs
+        rentalFinanceCosts: 0,         // mortgage interest and other finance costs
+        // 'auto' takes whichever of actual expenses or the £1,000 property allowance
+        // leaves less tax; the other values force one route.
+        propertyRoute: 'auto',         // 'auto' | 'expenses' | 'allowance'
+        otherSacrifice: 0              // non-pension salary sacrifice (employees only)
     };
 
     function household(overrides) {
@@ -116,6 +133,61 @@ of a spurious 98.2% reading in the 2025 chart.
 
     function isSelfEmploymentType(h) {
         return h.employmentType === 'Self-employed' || h.employmentType === 'Partnership/LLP';
+    }
+
+    function isEmployee(h) {
+        return !isSelfEmploymentType(h) && h.employmentType !== 'Pension income';
+    }
+
+    // --- Other income -------------------------------------------------------
+
+    function positive(value) {
+        const n = Number(value);
+        return Number.isFinite(n) && n > 0 ? n : 0;
+    }
+
+    /** Benefits in kind are taxed as pay, but bear no employee NI or student loan. */
+    function benefitsInKind(h) {
+        return isEmployee(h) ? positive(h.benefitCar) + positive(h.benefitMedical) + positive(h.benefitOther) : 0;
+    }
+
+    /** Pension income is taxed as non-savings income, with no NI. */
+    function pensionIncomeOf(h) {
+        return positive(h.statePension) + positive(h.privatePension);
+    }
+
+    function investmentsOf(h) {
+        return { savings: positive(h.savingsInterest), dividends: positive(h.dividendIncome), gains: positive(h.capitalGains) };
+    }
+
+    function hasRentalIncome(h) {
+        return positive(h.rentalIncome) > 0;
+    }
+
+    /**
+     * Rental profit is non-savings income. Residential finance costs aren't
+     * deductible: they give a basic rate tax credit instead (ITTOIA 2005 ss272A
+     * and 274A). The £1,000 property allowance replaces all deductions, finance
+     * costs included (ITTOIA 2005 Part 7A). A loss is treated as nil; it
+     * isn't carried forward. `cash` is what actually comes in, whichever route.
+     */
+    function rentalOf(h, dataset) {
+        const gross = positive(h.rentalIncome);
+        const expenses = positive(h.rentalExpenses);
+        const finance = positive(h.rentalFinanceCosts);
+        if (!gross) return { profit: 0, financeCosts: 0, cash: 0 };
+        const cash = gross - expenses - finance;
+        const allowance = (dataset && dataset['property income'] && dataset['property income']['property allowance']) || 0;
+        if (h.propertyRoute === 'allowance') return { profit: Math.max(0, gross - allowance), financeCosts: 0, cash };
+        return { profit: Math.max(0, gross - expenses), financeCosts: finance, cash };
+    }
+
+    /** Non-pension salary sacrifice, capped at the pay left after any pension sacrifice. */
+    function otherSacrificeFor(grossIncome, h, pension) {
+        if (!isEmployee(h)) return 0;
+        const fromPay = pension.method === 'sacrifice' || pension.method === 'netpay';
+        const left = Math.max(0, grossIncome - (fromPay ? pension.gross : 0));
+        return Math.min(positive(h.otherSacrifice), left);
     }
 
     function requiresEmployerNiGrossDown(h) {
@@ -181,8 +253,7 @@ of a spurious 98.2% reading in the 2025 chart.
     function pensionFor(grossIncome, h, dataset) {
         // Default to relief at source rather than sacrifice: an unrecognised value
         // should not silently grant NI relief it may not be entitled to.
-        const employee = !isSelfEmploymentType(h) && h.employmentType !== 'Pension income';
-        const method = employee && ['sacrifice', 'netpay'].includes(h.pensionMethod)
+        const method = isEmployee(h) &&['sacrifice', 'netpay'].includes(h.pensionMethod)
             ? h.pensionMethod : 'relief_at_source';
         const raw = Number(h.pensionContribution) || 0;
         if (!Number.isFinite(raw) || raw <= 0 || h.employmentType === 'Pension income') {
@@ -252,9 +323,13 @@ of a spurious 98.2% reading in the 2025 chart.
         const pension = pensionFor(grossIncome, h, dataset);
         const sacrificing = pension.method === 'sacrifice';
         const earnings = transformIncomeForEmployment(
-            grossIncome - (sacrificing ? pension.gross : 0), dataset, h).taxableIncome;
-        const adjustedIncome = earnings + (sacrificing ? pension.gross : 0);
-        const thresholdIncome = sacrificing ? adjustedIncome : Math.max(0, earnings - pension.gross);
+            grossIncome - (sacrificing ? pension.gross : 0) - otherSacrificeFor(grossIncome, h, pension),
+            dataset, h).taxableIncome;
+        // Both tests start from net income, so other taxable income counts too.
+        const inv = investmentsOf(h);
+        const other = benefitsInKind(h) + pensionIncomeOf(h) + inv.savings + inv.dividends + rentalOf(h, dataset).profit;
+        const adjustedIncome = earnings + other + (sacrificing ? pension.gross : 0);
+        const thresholdIncome = sacrificing ? adjustedIncome : Math.max(0, earnings + other - pension.gross);
 
         let allowance = standard;
         let tapered = false;
@@ -517,6 +592,68 @@ of a spurious 98.2% reading in the 2025 chart.
         return tax;
     }
 
+    function bandLimit(bandRules, name) {
+        const band = bandRules.find(b => b.name === name);
+        return band && band.threshold !== undefined ? band.threshold : Number.POSITIVE_INFINITY;
+    }
+
+    /**
+     * Tax on savings interest and dividends, and capital gains tax, stacked on top
+     * of non-savings income in the statutory order (ITA 2007 s16): non-savings,
+     * then savings, then dividends, with gains on top of all of it for CGT.
+     *
+     * Savings and dividend rates and bands are not devolved, so a Scottish taxpayer
+     * uses the UK bands here, measured against total taxable income including the
+     * Scottish-taxed slice. The same goes for the personal savings allowance test
+     * and the CGT basic rate band. Nil-rate amounts (starting rate, personal savings
+     * allowance, dividend allowance) still use up band space.
+     *
+     * Any tax deducted at source, UK or foreign, is ignored.
+     */
+    function investmentTax(nonSavingsIncome, allowance, inv, dataset, bandExtension) {
+        const cfg = dataset['savings and dividend allowances'] || {};
+        const ukBands = extendBands(dataset['income tax - savings'] || dataset['income tax'], bandExtension);
+        const dividendBands = extendBands(dataset['income tax - dividends'] || ukBands, bandExtension);
+
+        // The personal allowance goes against non-savings income first. Total
+        // taxable income, the starting rate band and the personal savings allowance
+        // don't depend on how the rest is split, so they can be settled first.
+        const allowanceLeft = Math.max(0, allowance - nonSavingsIncome);
+        const base = Math.max(0, nonSavingsIncome - allowance);
+        const taxable = Math.max(0, nonSavingsIncome + inv.savings + inv.dividends - allowance);
+
+        const basicLimit = bandLimit(ukBands, 'basic');
+        const higherLimit = bandLimit(ukBands, 'higher');
+        const savingsAllowance = taxable > higherLimit + EPSILON ? (cfg['personal savings allowance additional'] || 0)
+            : taxable > basicLimit + EPSILON ? (cfg['personal savings allowance higher'] || 0)
+            : (cfg['personal savings allowance basic'] || 0);
+        // The starting rate band shrinks £1 for £1 with non-savings taxable income.
+        const startingRoom = Math.max(0, (cfg['starting rate for savings band'] || 0) - base);
+
+        // The rest of the allowance goes where it saves most tax (ITA 2007 s25(2)).
+        // Savings rates are never below dividend rates, so it covers savings, but
+        // only savings that would otherwise be taxed: the starting rate band and the
+        // personal savings allowance cover the first slice anyway. Then dividends,
+        // and anything still left goes back to savings.
+        let toSavings = Math.min(allowanceLeft, Math.max(0, inv.savings - startingRoom - savingsAllowance));
+        const toDividends = Math.min(allowanceLeft - toSavings, inv.dividends);
+        toSavings += Math.min(allowanceLeft - toSavings - toDividends, inv.savings - toSavings);
+        const savings = inv.savings - toSavings;
+        const dividends = inv.dividends - toDividends;
+        const savingsNil = Math.min(savings, startingRoom + savingsAllowance);
+        const savingsTax = bandTax(savings - savingsNil, ukBands, base + savingsNil);
+        const dividendNil = Math.min(dividends, cfg['dividend allowance'] || 0);
+        const dividendTax = bandTax(dividends - dividendNil, dividendBands, base + savings + dividendNil);
+
+        const cgt = dataset['capital gains tax'] || {};
+        const gains = Math.max(0, inv.gains - (cgt['annual exempt amount'] || 0));
+        const basicRoom = Math.max(0, basicLimit - taxable);
+        const gainsTax = Math.min(gains, basicRoom) * (cgt['basic rate'] || 0)
+            + Math.max(0, gains - basicRoom) * (cgt['higher rate'] || 0);
+
+        return { savingsTax, dividendTax, gainsTax, taxable, savingsAllowance };
+    }
+
     function niClassLabel(taxType) {
         const labels = {
             'NI class 1 (employees)': 'NI Class 1',
@@ -643,14 +780,44 @@ of a spurious 98.2% reading in the 2025 chart.
             }
         }
 
+        // Savings, dividends and gains. Not combined with an income split, which
+        // already puts its own slice on top of non-savings income.
+        let investment = null;
+        const inv = isIncomeTax && !useIncomeSplit ? opts.investments : null;
+        if (inv && (inv.savings > 0 || inv.dividends > 0 || inv.gains > 0)) {
+            investment = investmentTax(grossIncome, modifiedPersonalAllowance || 0, inv, dataset, bandExtension);
+            totalTax += investment.savingsTax + investment.dividendTax;
+            if (collectDetails) {
+                if (investment.savingsTax > 0) adjustments.push({ label: 'Tax on savings interest', amount: investment.savingsTax, type: 'debit' });
+                if (investment.dividendTax > 0) adjustments.push({ label: 'Tax on dividends', amount: investment.dividendTax, type: 'debit' });
+            }
+        }
+
+        // Both tax reducers come off ordinary income tax, never loans or charges.
+        const ordinaryTax = isIncomeTax ? bandTax(taxableNetIncome, bandRules)
+            + (investment ? investment.savingsTax + investment.dividendTax : 0) : 0;
+        let reduced = 0;
+
+        // Finance costs on a let property: basic rate relief on the lowest of the
+        // costs, the rental profit and non-savings income above the allowance.
+        const rental = isIncomeTax && !useIncomeSplit ? opts.rental : null;
+        if (rental && rental.financeCosts > 0) {
+            const rate = (dataset['property income'] && dataset['property income']['finance cost relief rate']) || 0;
+            const credit = Math.min(rate * Math.min(rental.financeCosts, rental.profit, taxableNetIncome), ordinaryTax);
+            if (credit > 0) {
+                totalTax -= credit;
+                reduced += credit;
+                if (collectDetails) adjustments.push({ label: 'Finance cost relief', amount: -credit, type: 'credit' });
+            }
+        }
+
         // Marriage allowance reduces ordinary income tax, never loans or charges.
         if (isIncomeTax && h.includeMarriageAllowance
             && aniIncome <= dataset['marriage allowance max earnings'] + EPSILON) {
             const transfer = Math.ceil(dataset['statutory personal allowance']
                 * dataset['marriage allowance'] / 10) * 10;
             const rate = dataset['marriage allowance relief rate'] ?? 0.20;
-            const ordinaryTax = bandTax(taxableNetIncome, bandRules);
-            const credit = Math.min(transfer * rate, ordinaryTax);
+            const credit = Math.min(transfer * rate, ordinaryTax - reduced);
             totalTax -= credit;
             if (collectDetails && credit > 0) {
                 adjustments.push({ label: 'Marriage allowance credit', amount: -credit, type: 'credit' });
@@ -665,7 +832,9 @@ of a spurious 98.2% reading in the 2025 chart.
             // The Scottish starter rate never applies to the charge: the basic rate
             // runs from nil (FA 2004 s227(4AA)).
             const aaRules = bandRules.filter(band => band.name !== 'starter');
-            const aaCharge = bandTax(taxableNetIncome + excess, aaRules) - bandTax(taxableNetIncome, aaRules);
+            // The excess is the top slice of total income (FA 2004 s227(4)), so it sits above savings and dividends.
+            const top = investment ? investment.taxable : taxableNetIncome;
+            const aaCharge = bandTax(top + excess, aaRules) - bandTax(top, aaRules);
             if (aaCharge > 0) {
                 totalTax += aaCharge;
                 if (collectDetails) {
@@ -691,7 +860,11 @@ of a spurious 98.2% reading in the 2025 chart.
             total: totalTax,
             bands: bandBreakdown,
             adjustments,
-            personalAllowance: personalAllowanceUsed
+            personalAllowance: personalAllowanceUsed,
+            // Capital gains tax isn't income tax, so it stays out of `total`.
+            capitalGainsTax: investment ? investment.gainsTax : 0,
+            savingsTax: investment ? investment.savingsTax : 0,
+            dividendTax: investment ? investment.dividendTax : 0
         };
     }
 
@@ -710,27 +883,58 @@ of a spurious 98.2% reading in the 2025 chart.
      * higher-rate relief by extending the basic rate limit.
      */
     function pensionContext(grossIncome, dataset, h, mode) {
+        h = withPropertyRoute(grossIncome, dataset, h, mode);
         const pension = pensionFor(grossIncome, h, dataset);
         const sacrificing = pension.method === 'sacrifice' && pension.gross > 0;
-        const payAfterSacrifice = sacrificing ? grossIncome - pension.gross : grossIncome;
+        // Other salary sacrifice (a car, a bike) comes off pay for every purpose, as pension sacrifice does.
+        const otherSacrifice = otherSacrificeFor(grossIncome, h, pension);
+        const payAfterSacrifice = grossIncome - (sacrificing ? pension.gross : 0) - otherSacrifice;
         const split = transformIncomeForEmployment(payAfterSacrifice, dataset, h);
         const usingRas = pension.method === 'relief_at_source' && pension.gross > 0;
         const netpay = pension.method === 'netpay';
         const taxablePay = Math.max(0, split.taxableIncome - (netpay ? pension.gross : 0));
-        // Self Assessment loan income is reduced by relief at source contributions
-        // (SI 2009/470 reg 29(4)(j)). Employees are modelled on payroll deductions,
-        // which take no account of them.
-        const loanIncome = usingRas && isSelfEmploymentType(h)
-            ? Math.max(0, split.taxableIncome - pension.gross) : split.taxableIncome;
+        // Benefits in kind and pension income are non-savings income: taxed, and in
+        // adjusted net income, but outside NI and payroll student loan deductions.
+        const benefits = benefitsInKind(h);
+        const pensionIncome = pensionIncomeOf(h);
+        const investments = investmentsOf(h);
+        const rental = rentalOf(h, dataset);
+        const nonSavings = taxablePay + benefits + pensionIncome + rental.profit;
+        // Student loan income. Payroll deducts on earnings alone, before net pay
+        // contributions. Self Assessment instead uses total income (SI 2009/470
+        // reg 29(4)): pension income in full, benefits in kind excluded, unearned
+        // income (interest, dividends, rent) in full only if it's over £2,000, and
+        // relief at source contributions deducted. Gains aren't income. We assume a
+        // return is filed by the self-employed, pensioners, and anyone whose
+        // unearned income is over the threshold (CSLM16035); otherwise payroll.
+        const unearned = investments.savings + investments.dividends + rental.profit;
+        const unearnedThreshold = dataset && dataset['student loan unearned income threshold'] !== undefined
+            ? dataset['student loan unearned income threshold'] : Infinity;
+        const unearnedCounts = unearned > unearnedThreshold + EPSILON;
+        const selfAssessment = isSelfEmploymentType(h) || h.employmentType === 'Pension income'
+            || pensionIncome > 0 || unearnedCounts;
+        const loanIncome = selfAssessment
+            ? Math.max(0, taxablePay + pensionIncome + (unearnedCounts ? unearned : 0) - (usingRas ? pension.gross : 0))
+            : split.taxableIncome;
         const aa = annualAllowanceFor(grossIncome, dataset, h, mode);
         return {
             pension,
             payAfterSacrifice,
-            taxableIncome: taxablePay,
+            otherSacrifice,
+            benefits,
+            pensionIncome,
+            investments,
+            // Money received, before tax. Benefits in kind aren't cash.
+            rental,
+            cashIncome: grossIncome + pensionIncome + investments.savings + investments.dividends + investments.gains
+                + rental.cash,
+            taxableIncome: nonSavings,
             niIncome: split.taxableIncome,
             studentLoanIncome: loanIncome,
+            selfAssessment,
             employerNi: split.employerNi,
-            aniIncome: usingRas ? Math.max(0, split.taxableIncome - pension.gross) : taxablePay,
+            aniIncome: Math.max(0, nonSavings + investments.savings + investments.dividends
+                - (usingRas ? pension.gross : 0)),
             bandExtension: usingRas ? pension.gross : 0,
             // The provider's basic-rate top-up is tax relief paid into the pension.
             // It isn't cash, but rates must count it, or a SIPP looks dearer than
@@ -738,6 +942,18 @@ of a spurious 98.2% reading in the 2025 chart.
             reliefAtSource: usingRas ? pension.gross - pension.employeeOutlay : 0,
             annualAllowance: aa
         };
+    }
+
+    /**
+     * With rental income and the route left on 'auto', take whichever of actual
+     * expenses and the property allowance leaves less tax at this income.
+     */
+    function withPropertyRoute(grossIncome, dataset, h, mode) {
+        if (!dataset || !hasRentalIncome(h) || (h.propertyRoute && h.propertyRoute !== 'auto')) return h;
+        const expenses = Object.assign({}, h, { propertyRoute: 'expenses' });
+        const allowance = Object.assign({}, h, { propertyRoute: 'allowance' });
+        return totals(grossIncome, dataset, allowance, mode).adjustedTax
+            < totals(grossIncome, dataset, expenses, mode).adjustedTax - EPSILON ? allowance : expenses;
     }
 
     function totals(grossIncome, dataset, h, mode) {
@@ -755,11 +971,13 @@ of a spurious 98.2% reading in the 2025 chart.
             aniIncome: ctx.aniIncome,
             bandExtension: ctx.bandExtension,
             studentLoanIncome: ctx.studentLoanIncome,
-            annualAllowanceExcess: ctx.annualAllowance.excess
+            annualAllowanceExcess: ctx.annualAllowance.excess,
+            investments: ctx.investments,
+            rental: ctx.rental
         };
-        const incomeTax = taxAndNi(ctx.taxableIncome, dataset, 'income tax', h, taxOpts).total;
+        const income = taxAndNi(ctx.taxableIncome, dataset, 'income tax', h, taxOpts);
         const ni = niKey ? taxAndNi(ctx.niIncome, dataset, niKey, h, { mode: calcMode }).total : 0;
-        const totalTax = incomeTax + ni + ctx.employerNi;
+        const totalTax = income.total + ni + ctx.employerNi + income.capitalGainsTax;
         return {
             totalTax,
             adjustedTax: totalTax - cbCredit - ccCredit - ctx.reliefAtSource,
@@ -768,9 +986,12 @@ of a spurious 98.2% reading in the 2025 chart.
             pensionGross: ctx.pension.gross,
             employeeOutlay: ctx.pension.employeeOutlay,
             annualAllowance: ctx.annualAllowance,
+            // Everything the effective rate is a share of, benefits in kind included.
+            totalIncome: ctx.cashIncome + ctx.benefits,
             // Take-home cash. The pension pot is savings, not spendable income, so
             // it is reported separately rather than folded into net income.
-            netIncome: grossIncome - ctx.pension.employeeOutlay - (totalTax - cbCredit - ccCredit)
+            netIncome: ctx.cashIncome - ctx.pension.employeeOutlay - ctx.otherSacrifice
+                - (totalTax - cbCredit - ccCredit)
         };
     }
 
@@ -788,6 +1009,7 @@ of a spurious 98.2% reading in the 2025 chart.
 
         // The extra slice is unearned income, so it does not itself attract pension
         // contributions, but it does count towards adjusted net income.
+        // Not used by the shipped UI, and it doesn't combine with the investments box.
         const ctx = pensionContext(baseIncome, dataset, h, calcMode);
         const totalTaxableIncome = ctx.taxableIncome + extra;
         const aniIncome = ctx.aniIncome + extra;
@@ -845,35 +1067,53 @@ of a spurious 98.2% reading in the 2025 chart.
             aniIncome: ctx.aniIncome,
             bandExtension: ctx.bandExtension,
             studentLoanIncome: ctx.studentLoanIncome,
-            annualAllowanceExcess: ctx.annualAllowance.excess
+            annualAllowanceExcess: ctx.annualAllowance.excess,
+            investments: ctx.investments,
+            rental: ctx.rental
         });
         const niDetails = niKey
             ? taxAndNi(ctx.niIncome, dataset, niKey, h, { mode: 'actual', collectDetails: true })
             : { total: 0, bands: [], adjustments: [], personalAllowance: null };
 
-        const totalTax = incomeTaxDetails.total + niDetails.total + ctx.employerNi;
+        const capitalGainsTax = incomeTaxDetails.capitalGainsTax;
+        const totalTax = incomeTaxDetails.total + niDetails.total + ctx.employerNi + capitalGainsTax;
         const loanRepayments = incomeTaxDetails.adjustments
             .filter(a => a.label === 'Student loan').reduce((sum, a) => sum + a.amount, 0);
         const displayedTotalTax = totalTax - loanRepayments;
-        const cashTakeHome = income - ctx.pension.employeeOutlay - totalTax;
-        const pensionNetCost = ctx.pension.gross > 0
-            ? totals(income, dataset, household(Object.assign({}, h, { pensionContribution: 0 }))).netIncome
-                - (cashTakeHome + cbCredit + ccCredit)
-            : 0;
+        const cashTakeHome = ctx.cashIncome - ctx.pension.employeeOutlay - ctx.otherSacrifice - totalTax;
+        const totalIncome = ctx.cashIncome + ctx.benefits;
+        const withoutPension = ctx.pension.gross > 0
+            ? totals(income, dataset, household(Object.assign({}, h, { pensionContribution: 0 }))) : null;
+        const pensionNetCost = withoutPension
+            ? withoutPension.netIncome - (cashTakeHome + cbCredit + ccCredit) : 0;
         const adjustedTotalTax = totalTax - cbCredit - ccCredit - ctx.reliefAtSource;
+        // An employee's payroll knows nothing of a personal pension, so relief beyond
+        // the provider's basic-rate top-up arrives through Self Assessment or a tax code change.
+        const reliefViaReturn = withoutPension && ctx.reliefAtSource > 0 && isEmployee(h)
+            ? Math.max(0, withoutPension.totalTax - totalTax) : 0;
 
         return {
             income,
+            cashIncome: ctx.cashIncome,
+            totalIncome,
             netIncome: cashTakeHome + cbCredit + ccCredit,
             cashTakeHome,
             cashWithBenefits: cashTakeHome + cbCredit,
             loanRepayments,
             incomeTaxAmount: incomeTaxDetails.total - loanRepayments,
-            taxRate: income === 0 ? 0 : displayedTotalTax / income * 100,
+            savingsTax: incomeTaxDetails.savingsTax,
+            dividendTax: incomeTaxDetails.dividendTax,
+            capitalGainsTax,
+            benefitsInKind: ctx.benefits,
+            pensionIncome: ctx.pensionIncome,
+            investments: ctx.investments,
+            otherSacrifice: ctx.otherSacrifice,
+            reliefViaReturn,
+            taxRate: totalIncome === 0 ? 0 : displayedTotalTax / totalIncome * 100,
             pensionNetCost,
             adjustedNetIncome: ctx.aniIncome,
             totalTax: displayedTotalTax,
-            effectiveRate: income === 0 ? 0 : (adjustedTotalTax / income) * 100,
+            effectiveRate: totalIncome === 0 ? 0 : (adjustedTotalTax / totalIncome) * 100,
             marginalRate: marginalRate(income, dataset, h),
             employerNi: ctx.employerNi,
             childBenefitCredit: cbCredit,
@@ -909,6 +1149,15 @@ of a spurious 98.2% reading in the 2025 chart.
     function childcareCliff(dataset, h, limit) {
         if (!(h.childcareSubsidyAmount > 0) || !dataset) return null;
         return aniCliff(dataset, h, limit, dataset['childcare max earnings']);
+    }
+
+    /**
+     * How much more main income keeps adjusted net income at or below `threshold`,
+     * searching up to `limit` more. Null if already over, or if `limit` isn't enough.
+     */
+    function headroom(income, dataset, h, threshold, limit) {
+        if (!dataset) return null;
+        return lastIncomeWhere(limit, extra => pensionContext(income + extra, dataset, h, 'actual').aniIncome <= threshold + EPSILON);
     }
 
     function marriageAllowanceCliff(dataset, h, limit) {
@@ -951,7 +1200,7 @@ of a spurious 98.2% reading in the 2025 chart.
             out.gross.push(gross);
             out.net.push(t.netIncome);
             out.marginal.push(marginalRate(gross, dataset, h));
-            out.effective.push(gross === 0 ? 0 : (t.adjustedTax / gross) * 100);
+            out.effective.push(t.totalIncome === 0 ? 0 : (t.adjustedTax / t.totalIncome) * 100);
             out.pension.push(t.pensionGross);
         }
         return out;
@@ -1015,12 +1264,17 @@ of a spurious 98.2% reading in the 2025 chart.
         household,
         // classification
         isSelfEmploymentType,
+        isEmployee,
         requiresEmployerNiGrossDown,
         activeNiKey,
         activeStudentLoanPlan,
         loanComponents,
         // components
         transformIncomeForEmployment,
+        benefitsInKind,
+        pensionIncomeOf,
+        investmentsOf,
+        investmentTax,
         pensionFor,
         pensionContext,
         annualAllowanceFor,
@@ -1040,6 +1294,7 @@ of a spurious 98.2% reading in the 2025 chart.
         summary,
         curve,
         childcareCliff,
+        headroom,
         marriageAllowanceCliff,
         annualAllowanceCliff,
         validateDatasets

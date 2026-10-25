@@ -1095,3 +1095,41 @@ html.is-framed .masthead { display: none; }
     .pay__head { margin-bottom: 4px; }
     .info__tip--pay { width: auto; }
 }
+
+/* ---------- Round 9 (v1.1): income boxes under the slider, a fourth option box, sliding panels ---------- */
+.extras--income { padding-top: 10px; }
+.extras--income .extra { padding-inline: 7px; }
+.extras--income .extra__label { font-size: .76rem; }
+/* Four boxes in one row: the longer labels break onto two lines, and the value sits at the bottom of each box */
+.extras--four { gap: 4px; }
+.extras--four .extra { padding-inline: 6px; align-content: space-between; }
+.extras--four .extra__label, .extras--four .extra__state { white-space: normal; line-height: 1.2; }
+.is-cgt { background: var(--seg-tax); opacity: .7; }
+.control__head { position: relative; display: flex; align-items: center; gap: 3px; }
+.salary__suffix { flex: none; font-size: .74rem; color: var(--ink-3); white-space: nowrap; }
+.row--tip { position: relative; }
+.row__head { display: inline-flex; align-items: center; gap: 3px; }
+.home__note { margin: 8px 0 0; font-size: .74rem; line-height: 1.45; color: var(--ink-3); }
+.notice--info { background: var(--surface-tint); border: 1px solid #c9d6fb; color: var(--ink-2); }
+.notice--info b { color: var(--ink); font-weight: 600; }
+.info__tip b { color: #fff; font-weight: 600; }
+
+.slide-enter-active, .slide-leave-active {
+    overflow: hidden;
+    transition: max-height .28s var(--ease-out), opacity .2s var(--ease-out), margin-top .28s var(--ease-out),
+                padding-top .28s var(--ease-out), padding-bottom .28s var(--ease-out);
+}
+.slide-enter-from, .slide-leave-to { max-height: 0; opacity: 0; margin-top: 0; padding-top: 0; padding-bottom: 0; }
+.slide-enter-to, .slide-leave-from { max-height: 640px; }
+@media (prefers-reduced-motion: reduce) { .slide-enter-active, .slide-leave-active { transition: none; } }
+
+.cockpit { position: relative; }
+.version { position: absolute; right: 12px; bottom: 5px; margin: 0; font-size: .62rem; color: var(--ink-3); pointer-events: none; }
+@media (max-width: 760px) { .cp-about { padding-bottom: 20px; } }
+/* Each digit column is as wide as the widest digit, so centre narrow ones (a 1 left a gap after it) */
+.roll__strip > span { text-align: center; }
+.tip-line { display: block; }
+.tip-line + .tip-line { margin-top: 4px; }
+
+/* The value mustn't widen its box: the labels set the widths, and a long value wraps */
+.extras--four .extra__state { contain: inline-size; width: 100%; }

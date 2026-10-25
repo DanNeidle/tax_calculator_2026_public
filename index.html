@@ -14,7 +14,7 @@ to use it however they wish provided they attribute it to Tax Policy Associates 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=20261025b">
+    <link rel="stylesheet" href="style.css?v=1.1">
 </head>
 <body>
 <main id="app" class="app" v-cloak>
@@ -30,7 +30,7 @@ to use it however they wish provided they attribute it to Tax Policy Associates 
     <section class="cockpit" aria-label="Calculator">
         <div class="cp-pay">
             <form class="pay" @submit.prevent="commitIncome">
-                <div class="pay__head"><label class="pay__label" for="income">{{ incomeLabel }}</label><button type="button" class="info info--pay" :class="{ 'is-open': openTip === 'income' }" aria-label="What income does the calculator cover?" :aria-expanded="openTip === 'income'" aria-describedby="tip-income" @click="openTip = openTip === 'income' ? null : 'income'" @keydown.esc="openTip = null" @blur="openTip = null"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6"/><circle cx="12" cy="7.5" r=".9" fill="currentColor" stroke="none"/></svg><span class="info__tip info__tip--pay" id="tip-income" role="tooltip">The calculator assumes all your income is of one kind: pay, self-employed profit or pension. It doesn't handle a mix (salary plus a pension, for example), or dividends, savings interest, rental income or capital gains. We'd love to make the calculator more sophisticated in the future.</span></button></div>
+                <div class="pay__head"><label class="pay__label" for="income">{{ incomeLabel }}</label><button type="button" class="info info--pay" :class="{ 'is-open': openTip === 'income' }" aria-label="What income does the calculator cover?" :aria-expanded="openTip === 'income'" aria-describedby="tip-income" @click="openTip = openTip === 'income' ? null : 'income'" @keydown.esc="openTip = null" @blur="openTip = null"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6"/><circle cx="12" cy="7.5" r=".9" fill="currentColor" stroke="none"/></svg><span class="info__tip info__tip--pay" id="tip-income" role="tooltip">{{ incomeTip }}</span></button></div>
                 <div class="pay__field">
                     <span class="pay__prefix" aria-hidden="true">£</span>
                     <input id="income" ref="incomeInput" class="pay__input" type="text" inputmode="decimal"
@@ -50,6 +50,59 @@ to use it however they wish provided they attribute it to Tax Policy Associates 
                     </button>
                 </div>
             </div>
+            <div class="extras extras--income" role="group" aria-label="Benefits, pension income and investments">
+                <button type="button" class="extra" :class="{ 'is-set': summary.benefitsInKind > 0, 'is-open': openPanel === 'benefits' }" :aria-expanded="openPanel === 'benefits'" aria-controls="panel-benefits" @click="openPanel = openPanel === 'benefits' ? null : 'benefits'">
+                    <span class="extra__label">Benefits</span>
+                    <span class="extra__state">{{ summary.benefitsInKind > 0 ? fmtMoney(summary.benefitsInKind) : 'Add' }}</span>
+                </button>
+                <button type="button" class="extra" :class="{ 'is-set': summary.pensionIncome > 0, 'is-open': openPanel === 'pensionIncome' }" :aria-expanded="openPanel === 'pensionIncome'" aria-controls="panel-pension-income" @click="openPanel = openPanel === 'pensionIncome' ? null : 'pensionIncome'">
+                    <span class="extra__label">Pension income</span>
+                    <span class="extra__state">{{ summary.pensionIncome > 0 ? fmtMoney(summary.pensionIncome) : 'Add' }}</span>
+                </button>
+                <button type="button" class="extra" :class="{ 'is-set': investmentsTotal > 0, 'is-open': openPanel === 'investments' }" :aria-expanded="openPanel === 'investments'" aria-controls="panel-investments" @click="openPanel = openPanel === 'investments' ? null : 'investments'">
+                    <span class="extra__label">Investments</span>
+                    <span class="extra__state">{{ investmentsTotal > 0 ? fmtMoney(investmentsTotal) : 'Add' }}</span>
+                </button>
+            </div>
+            <transition name="slide"><div class="extra-panel" id="panel-benefits" v-show="openPanel === 'benefits'"><div class="subpanel" v-if="workplacePension">
+                <div class="controls">
+                    <money-input v-model="household.benefitCar" input-id="benefit-car" label="Company car and fuel"></money-input>
+                    <money-input v-model="household.benefitMedical" input-id="benefit-medical" label="Medical insurance"></money-input>
+                    <money-input v-model="household.benefitOther" input-id="benefit-other" label="Other benefits"></money-input>
+                </div>
+                <p class="hint">Enter the taxable value from your P11D, or your payslip if your employer payrolls benefits.</p>
+            </div>
+            <p class="hint" v-else>Benefits in kind only apply to employees.</p></div></transition>
+            <transition name="slide"><div class="extra-panel" id="panel-pension-income" v-show="openPanel === 'pensionIncome'"><div class="subpanel">
+                <div class="controls">
+                    <money-input v-model="household.statePension" input-id="state-pension" label="State pension"></money-input>
+                    <money-input v-model="household.privatePension" input-id="private-pension" label="Workplace and private pensions"></money-input>
+                </div>
+                <p class="hint">Pension income you receive on top of {{ household.employmentType === 'Pension income' ? 'the figure above' : 'your pay or profit' }}.</p>
+            </div></div></transition>
+            <transition name="slide"><div class="extra-panel" id="panel-investments" v-show="openPanel === 'investments'"><div class="subpanel">
+                <div class="controls">
+                    <money-input v-model="household.savingsInterest" input-id="savings-interest" label="Savings interest">
+                        <button type="button" class="info info--pay" :class="{ 'is-open': openTip === 'interest' }" aria-label="About savings interest" :aria-expanded="openTip === 'interest'" aria-describedby="tip-interest" @click="openTip = openTip === 'interest' ? null : 'interest'" @keydown.esc="openTip = null" @blur="openTip = null"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6"/><circle cx="12" cy="7.5" r=".9" fill="currentColor" stroke="none"/></svg><span class="info__tip info__tip--pay" id="tip-interest" role="tooltip">Interest from bank and building society accounts, bonds and the like, outside an ISA or pension. Any tax already deducted isn't taken into account.</span></button>
+                    </money-input>
+                    <money-input v-model="household.dividendIncome" input-id="dividend-income" label="Dividends">
+                        <button type="button" class="info info--pay" :class="{ 'is-open': openTip === 'dividends' }" aria-label="About dividends" :aria-expanded="openTip === 'dividends'" aria-describedby="tip-dividends" @click="openTip = openTip === 'dividends' ? null : 'dividends'" @keydown.esc="openTip = null" @blur="openTip = null"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6"/><circle cx="12" cy="7.5" r=".9" fill="currentColor" stroke="none"/></svg><span class="info__tip info__tip--pay" id="tip-dividends" role="tooltip">Dividends from shares and funds held outside an ISA or pension, including from your own company. Foreign tax withheld isn't taken into account, and no credit is given for it.</span></button>
+                    </money-input>
+                    <money-input v-model="household.capitalGains" input-id="capital-gains" label="Capital gains">
+                        <button type="button" class="info info--pay" :class="{ 'is-open': openTip === 'gains' }" aria-label="About capital gains" :aria-expanded="openTip === 'gains'" aria-describedby="tip-gains" @click="openTip = openTip === 'gains' ? null : 'gains'" @keydown.esc="openTip = null" @blur="openTip = null"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6"/><circle cx="12" cy="7.5" r=".9" fill="currentColor" stroke="none"/></svg><span class="info__tip info__tip--pay" id="tip-gains" role="tooltip">Your total gains for the year, after losses, from selling shares, funds, a second home or other assets held outside an ISA or pension. Leave out the sale of your main home. Reliefs such as Business Asset Disposal Relief aren't applied.</span></button>
+                    </money-input>
+                    <money-input v-model="household.rentalIncome" input-id="rental-income" label="Rental income">
+                        <button type="button" class="info info--pay" :class="{ 'is-open': openTip === 'rent' }" aria-label="About rental income" :aria-expanded="openTip === 'rent'" aria-describedby="tip-rent" @click="openTip = openTip === 'rent' ? null : 'rent'" @keydown.esc="openTip = null" @blur="openTip = null"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6"/><circle cx="12" cy="7.5" r=".9" fill="currentColor" stroke="none"/></svg><span class="info__tip info__tip--pay" id="tip-rent" role="tooltip">Rent from property you let out yourself, not through a company, before any costs.</span></button>
+                    </money-input>
+                    <money-input v-model="household.rentalExpenses" input-id="rental-expenses" label="Rental expenses">
+                        <button type="button" class="info info--pay" :class="{ 'is-open': openTip === 'rentcosts' }" aria-label="About rental expenses" :aria-expanded="openTip === 'rentcosts'" aria-describedby="tip-rentcosts" @click="openTip = openTip === 'rentcosts' ? null : 'rentcosts'" @keydown.esc="openTip = null" @blur="openTip = null"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6"/><circle cx="12" cy="7.5" r=".9" fill="currentColor" stroke="none"/></svg><span class="info__tip info__tip--pay" id="tip-rentcosts" role="tooltip">Your running costs: letting agent fees, repairs, insurance, service charges and the like. Mortgage interest goes in the next box. If your costs are more than your rent, the calculator treats the profit as nil and doesn't carry the loss forward.</span></button>
+                    </money-input>
+                    <money-input v-model="household.rentalFinanceCosts" input-id="rental-finance" label="Mortgage interest and finance costs">
+                        <button type="button" class="info info--pay" :class="{ 'is-open': openTip === 'rentfinance' }" aria-label="About mortgage interest and finance costs" :aria-expanded="openTip === 'rentfinance'" aria-describedby="tip-rentfinance" @click="openTip = openTip === 'rentfinance' ? null : 'rentfinance'" @keydown.esc="openTip = null" @blur="openTip = null"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6"/><circle cx="12" cy="7.5" r=".9" fill="currentColor" stroke="none"/></svg><span class="info__tip info__tip--pay" id="tip-rentfinance" role="tooltip">Interest on the mortgage or other loans for your let property, plus arrangement fees. Don't include capital repayments. Any amount the calculator can't use this year isn't carried forward.</span></button>
+                    </money-input>
+                </div>
+                <p class="hint">These are fixed amounts on top of your main income: the chart still follows the figure above.</p>
+            </div></div></transition>
         </div>
 
         <div class="cp-home">
@@ -65,6 +118,7 @@ to use it however they wish provided they attribute it to Tax Policy Associates 
                 <li v-for="p in takeHomeSplit.slice(1)" :key="p.key"><i class="swatch-dot" :class="'is-' + p.key"></i><span>{{ p.label }}</span><b>{{ fmtMoney(p.amount) }}</b></li>
                 <li class="is-credit" v-if="summary.childcareCredit > 0"><i class="swatch-dot is-credit"></i><span>Childcare support</span><b>+{{ fmtMoney(summary.childcareCredit) }}</b></li>
             </ul>
+            <p class="home__note" v-if="summary.reliefViaReturn >= 1">Includes {{ fmtMoney(summary.reliefViaReturn) }} of pension tax relief that comes through Self Assessment or a tax code change, not your monthly pay.</p>
         </div>
 
         <dl class="cp-rates">
@@ -72,11 +126,12 @@ to use it however they wish provided they attribute it to Tax Policy Associates 
             <div class="rate"><dt>Effective tax rate<button type="button" class="info" :class="{ 'is-open': openTip === 'effective' }" aria-label="What is the effective tax rate?" :aria-expanded="openTip === 'effective'" aria-describedby="tip-effective" @click="openTip = openTip === 'effective' ? null : 'effective'" @keydown.esc="openTip = null" @blur="openTip = null"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6"/><circle cx="12" cy="7.5" r=".9" fill="currentColor" stroke="none"/></svg><span class="info__tip info__tip--effective" id="tip-effective" role="tooltip">Everything you pay in income tax, national insurance and student loan repayments, less any child benefit, childcare support and pension tax relief you receive, as a share of all your income.</span></button></dt><dd>{{ fmtPct(summary.effectiveRate) }}</dd></div>
             <div class="rate rate--wide" v-if="pensionActive && summary.pensionNetCost >= 0"><dt>{{ fmtMoney(summary.pensionGross) }} into your pension costs you</dt><dd>{{ fmtMoney(summary.pensionNetCost) }}</dd></div>
             <div class="rate rate--wide" v-if="pensionActive && summary.pensionNetCost < 0"><dt>{{ fmtMoney(summary.pensionGross) }} into your pension leaves you better off by</dt><dd>{{ fmtMoney(-summary.pensionNetCost) }}</dd></div>
+            <div class="rate rate--wide" v-if="headroomNote"><dt>You can earn this much more before {{ headroomNote.what }}</dt><dd>{{ fmtMoney(headroomNote.room) }}</dd></div>
         </dl>
 
         <div class="cp-about">
-            <div class="row">
-                <label class="row__label" for="employment">Paid as</label>
+            <div class="row row--tip">
+                <span class="row__head"><label class="row__label" for="employment">Paid as</label><button type="button" class="info info--pay" :class="{ 'is-open': openTip === 'paid' }" aria-label="What do the options mean?" :aria-expanded="openTip === 'paid'" aria-describedby="tip-paid" @click="openTip = openTip === 'paid' ? null : 'paid'" @keydown.esc="openTip = null" @blur="openTip = null"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6"/><circle cx="12" cy="7.5" r=".9" fill="currentColor" stroke="none"/></svg><span class="info__tip info__tip--pay" id="tip-paid" role="tooltip"><span class="tip-line"><b>Employed:</b> a salary taxed through PAYE.</span><span class="tip-line"><b>Self-employed:</b> a sole trader's taxable profit.</span><span class="tip-line"><b>Partnership/LLP:</b> your share of the partnership's taxable profit.</span><span class="tip-line"><b>Within IR35:</b> a contract caught by the off-payroll rules.</span><span class="tip-line"><b>Working past State Pension age:</b> pay once you've reached State Pension age.</span><span class="tip-line"><b>Pension income:</b> income from pensions only. To add a pension to your pay, use the Pension income box under the slider.</span></span></button></span>
                 <select id="employment" class="row__select" v-model="household.employmentType"><option v-for="t in employmentTypes" :key="t" :value="t">{{ t }}</option></select>
             </div>
             <div class="row">
@@ -98,21 +153,25 @@ to use it however they wish provided they attribute it to Tax Policy Associates 
                 <label class="row__label" for="marriage">Marriage allowance received</label>
                 <span class="switch"><input id="marriage" type="checkbox" role="switch" v-model="household.includeMarriageAllowance"><span aria-hidden="true"></span></span>
             </div>
-            <div class="extras" role="group" aria-label="Pension, student loan and childcare">
+            <div class="extras extras--four" role="group" aria-label="Pension, student loan, childcare and salary sacrifice">
                 <button type="button" class="extra" :class="{ 'is-set': pensionActive, 'is-open': openPanel === 'pension' }" :aria-expanded="openPanel === 'pension'" aria-controls="panel-pension" @click="openPanel = openPanel === 'pension' ? null : 'pension'">
                     <span class="extra__label">Pension</span>
                     <span class="extra__state">{{ pensionActive ? fmtMoney(summary.pensionGross) : 'Add' }}</span>
                 </button>
                 <button type="button" class="extra" :class="{ 'is-set': household.includeStudentLoan, 'is-open': openPanel === 'loan' }" :aria-expanded="openPanel === 'loan'" aria-controls="panel-loan" @click="openPanel = openPanel === 'loan' ? null : 'loan'">
-                    <span class="extra__label">Student loan</span>
+                    <span class="extra__label">Student<br>loan</span>
                     <span class="extra__state">{{ household.includeStudentLoan ? loanShort : 'Add' }}</span>
                 </button>
                 <button type="button" class="extra" :class="{ 'is-set': household.childcareSubsidyAmount > 0, 'is-open': openPanel === 'childcare' }" :aria-expanded="openPanel === 'childcare'" aria-controls="panel-childcare" @click="openPanel = openPanel === 'childcare' ? null : 'childcare'">
                     <span class="extra__label">Childcare</span>
                     <span class="extra__state">{{ household.childcareSubsidyAmount > 0 ? fmtMoney(household.childcareSubsidyAmount) : 'Add' }}</span>
                 </button>
+                <button type="button" class="extra" :class="{ 'is-set': summary.otherSacrifice > 0, 'is-open': openPanel === 'sacrifice' }" :aria-expanded="openPanel === 'sacrifice'" aria-controls="panel-sacrifice" @click="openPanel = openPanel === 'sacrifice' ? null : 'sacrifice'">
+                    <span class="extra__label">Salary<br>sacrifice</span>
+                    <span class="extra__state">{{ summary.otherSacrifice > 0 ? fmtMoney(summary.otherSacrifice) : 'Add' }}</span>
+                </button>
             </div>
-            <div class="extra-panel" id="panel-pension" v-show="openPanel === 'pension'"><div class="subpanel" v-if="pensionEnabled">
+            <transition name="slide"><div class="extra-panel" id="panel-pension" v-show="openPanel === 'pension'"><div class="subpanel" v-if="pensionEnabled">
                 <div class="subpanel__head">
                     <h2>Pension contributions</h2>
                     <div class="segmented segmented--sm" role="group" aria-label="Pension contribution basis">
@@ -135,22 +194,23 @@ to use it however they wish provided they attribute it to Tax Policy Associates 
                         <select id="pension-method" v-model="household.pensionMethod">
                             <option v-if="workplacePension" value="sacrifice">Salary sacrifice</option>
                             <option v-if="workplacePension" value="netpay">Workplace pension (net pay)</option>
-                            <option value="sipp">SIPP or personal pension</option>
+                            <option value="sipp">Relief at source (SIPP, personal pension, NEST and similar)</option>
                         </select>
                     </div>
                 </div>
+                <p class="notice notice--info" v-if="pensionActive && summary.pensionMethod === 'relief_at_source'">You pay <b>{{ fmtMoney(summary.pensionEmployeeOutlay) }}</b> a year to the provider, which claims the other {{ fmtMoney(summary.pensionGross - summary.pensionEmployeeOutlay) }} from HMRC. Any relief above the basic rate has to be claimed from HMRC.</p>
                 <p id="pension-hint" class="hint">Enter the total going into your pension, including any basic-rate top-up, but excluding other employer contributions.</p>
+                <p class="hint" v-if="household.pensionBasis === 'percent'">A percentage grows with your pay, so part of each extra £1 goes to your pension. That lowers the marginal rate.</p>
                 <p class="hint" v-if="pensionActive && household.pensionMethod === 'sacrifice'">Your employer must offer salary sacrifice, and your remaining pay must meet minimum-wage rules.</p>
                 <p class="notice notice--warn" v-if="pensionCapNotice">{{ pensionCapNotice }}</p>
-                <p class="hint" v-if="pensionActive && summary.pensionMethod === 'relief_at_source'">You pay {{ fmtMoney(summary.pensionEmployeeOutlay) }} to the provider. Extra tax relief may need claiming from HMRC.</p>
                 <p class="notice notice--warn" v-if="allowanceExcess > 0">This exceeds your {{ fmtMoney(summary.annualAllowance.allowance) }} annual allowance by {{ fmtMoney(allowanceExcess) }}. An annual allowance charge is included; unused allowance carried forward could reduce it.</p>
             </div>
-            <p class="hint" v-else>Pension contributions from pension income aren't modelled.</p></div>
-            <div class="extra-panel" id="panel-loan" v-show="openPanel === 'loan'">
+            <p class="hint" v-else>Pension contributions from pension income aren't modelled.</p></div></transition>
+            <transition name="slide"><div class="extra-panel" id="panel-loan" v-show="openPanel === 'loan'">
                 <div class="control control--check"><input id="student-loan" type="checkbox" v-model="household.includeStudentLoan"><label for="student-loan">I have a student loan</label></div>
                 <div class="control" v-if="household.includeStudentLoan"><label for="loan-plan">Which plan</label><select id="loan-plan" v-model="household.studentLoanPlan"><option v-for="p in loanPlans" :key="p.id" :value="p.id">{{ p.label }}</option></select></div>
-            </div>
-            <div class="extra-panel" id="panel-childcare" v-show="openPanel === 'childcare'"><div class="subpanel">
+            </div></transition>
+            <transition name="slide"><div class="extra-panel" id="panel-childcare" v-show="openPanel === 'childcare'"><div class="subpanel">
                 <div class="subpanel__head childcare-heading">
                     <h2><label for="childcare">Childcare support</label></h2>
                     <button type="button" class="help-toggle" :aria-expanded="childcareHelpOpen" aria-controls="childcare-help" aria-label="About childcare support" title="About childcare support" @click="childcareHelpOpen = !childcareHelpOpen">
@@ -160,7 +220,14 @@ to use it however they wish provided they attribute it to Tax Policy Associates 
                 <p id="childcare-help" class="help-text" v-if="childcareHelpOpen">Enter the total annual support your household would lose above £100,000 adjusted net income. Use your <a href="https://www.gov.uk/tax-free-childcare" target="_blank" rel="noopener">Tax-Free Childcare account</a> and ask your nursery what replacing the lost funded hours would cost. For three- and four-year-olds in England, count the extra 15 hours, not the universal 15. Younger children can lose all 30 working-parent hours. <a href="https://www.gov.uk/free-childcare-if-working/check-youre-eligible" target="_blank" rel="noopener">Check the funded-hours rules</a>.<template v-if="scotland"> Scotland's funded hours have no income limit, so in Scotland count only Tax-Free Childcare.</template> Only include support actually at risk for your family; eligibility and your partner's income aren't checked here.</p>
                 <select class="standalone-select" id="childcare" v-model.number="household.childcareSubsidyAmount" aria-describedby="childcare-hint"><option v-for="opt in childcareOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option></select>
                 <p id="childcare-hint" class="hint">Total annual amount at risk above £100,000, for your whole household.</p>
-            </div></div>
+            </div></div></transition>
+            <transition name="slide"><div class="extra-panel" id="panel-sacrifice" v-show="openPanel === 'sacrifice'"><div class="subpanel" v-if="workplacePension">
+                <div class="controls">
+                    <money-input v-model="household.otherSacrifice" input-id="other-sacrifice" label="Salary given up"></money-input>
+                </div>
+                <p class="hint">For example, an electric car or the cycle to work scheme. Enter pension salary sacrifice under Pension, and the car's taxable value under Benefits.</p>
+            </div>
+            <p class="hint" v-else>Salary sacrifice only applies to employees.</p></div></transition>
         </div>
 
         <div class="cp-stage">
@@ -221,6 +288,7 @@ to use it however they wish provided they attribute it to Tax Policy Associates 
                         </optgroup>
                     </select></label>
         </div>
+        <p class="version">{{ version }}</p>
     </section>
 
         <section class="detail" id="detail" aria-labelledby="detail-heading">
@@ -253,7 +321,7 @@ to use it however they wish provided they attribute it to Tax Policy Associates 
 </main>
 <script src="echarts.min.js"></script>
 <script src="vue.global.prod.js"></script>
-<script src="taxEngine.js?v=20261025b"></script>
-<script src="app.js?v=20261025b"></script>
+<script src="taxEngine.js?v=1.1"></script>
+<script src="app.js?v=1.1"></script>
 </body>
 </html>

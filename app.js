@@ -21,6 +21,60 @@ const STEP = 500;                 // chart sampling; marginal rates are for the 
 const SLIDER_MAX = 250000;        // reaches past the top 1% notch at £207,000
 const CURRENT_DATASET = '2026-27';
 const MAX_ENTRY = 10000000;
+const VERSION = 'v1.1';
+// show the headroom line when the next threshold is this close
+const HEADROOM_WINDOW = 10000;
+
+function parseMoney(text, maximum) {
+    const raw = text.trim().replace(/^£\s*/, '');
+    if (!raw) return 0;
+    if (!/^(?:\d+|\d{1,3}(?:,\d{3})+)(?:\.\d{0,2})?$/.test(raw)) return null;
+    const value = Number(raw.replace(/,/g, ''));
+    return Number.isFinite(value) && value >= 0 && value <= maximum ? value : null;
+}
+
+/*
+ * A £ a year field for the extra income and benefit boxes. Like the pay field,
+ * it keeps what was typed while it has focus, so reformatting can't fight the keyboard.
+ * Anything in the default slot (an information icon) sits beside the label.
+ */
+const MoneyInput = {
+    props: { modelValue: { type: Number, default: 0 }, inputId: String, label: String },
+    emits: ['update:modelValue'],
+    data() { return { text: '', editing: false, error: '' }; },
+    computed: {
+        shown() {
+            const v = Number(this.modelValue);
+            return v > 0 ? v.toLocaleString('en-GB', { maximumFractionDigits: 2 }) : '';
+        }
+    },
+    methods: {
+        onFocus(e) { this.editing = true; this.text = this.shown; e.target.select(); },
+        // A half-typed "5," isn't an error yet, so a bad entry is only flagged on leaving the field.
+        onBlur() {
+            this.editing = false;
+            this.error = parseMoney(this.text, MAX_ENTRY) === null ? 'Enter an amount from £0 to £10,000,000.' : '';
+        },
+        onInput(e) {
+            this.text = e.target.value;
+            const value = parseMoney(this.text, MAX_ENTRY);
+            if (value === null) return;
+            this.error = '';
+            this.$emit('update:modelValue', value);
+        }
+    },
+    template: `<div class="control">
+        <div class="control__head"><label :for="inputId">{{ label }}</label><slot></slot></div>
+        <div class="salary__field salary__field--sm">
+            <span class="salary__prefix" aria-hidden="true">£</span>
+            <input :id="inputId" class="salary__input" type="text" inputmode="decimal" autocomplete="off"
+                   :value="editing || error ? text : shown" :aria-invalid="!!error" :aria-describedby="error ? inputId + '-error' : null"
+                   @input="onInput" @focus="onFocus" @blur="onBlur">
+            <span class="salary__suffix" aria-hidden="true">a year</span>
+        </div>
+        <p class="field-error" :id="inputId + '-error'" v-if="error" role="alert">{{ error }}</p>
+    </div>`
+};
 
 
 /*
@@ -76,6 +130,8 @@ function renderFrameBlock() {
 }
 
 const APP_OPTIONS = {
+    components: { 'money-input': MoneyInput },
+
     data() {
         return {
             taxData: {},
@@ -122,7 +178,8 @@ const APP_OPTIONS = {
             exportConfirm: null,
             exportAcknowledged: false,
             exportTrigger: null,
-            wayOutDismissed: false
+            wayOutDismissed: false,
+            version: VERSION
         };
     },
 
@@ -164,13 +221,15 @@ const APP_OPTIONS = {
                 { label: `National insurance${s.employerNi ? ' (including employer NI)' : ''}`, amount: s.ni.total + s.employerNi }
             ];
             if (this.household.includeStudentLoan) rows.push({ label: 'Student loan repayments', amount: s.loanRepayments });
+            if (s.capitalGainsTax > 0) rows.push({ label: 'Capital gains tax', amount: s.capitalGainsTax });
             if (s.pensionEmployeeOutlay > 0) {
                 // Rounded on its own, so it matches the "you pay" hint; tax and NI absorb the spare pound.
                 rows.push({ label: s.pensionMethod === 'relief_at_source'
                     ? 'Paid to your pension provider' : 'Pension contributions from pay', amount: s.pensionEmployeeOutlay, fixed: true });
             }
+            if (s.otherSacrifice > 0) rows.push({ label: 'Other salary sacrifice', amount: s.otherSacrifice, fixed: true });
             const cash = Math.round(s.cashTakeHome);
-            this.roundToTotal(rows, Math.round(this.income) - cash);
+            this.roundToTotal(rows, Math.round(s.cashIncome) - cash);
             rows.push({ label: 'Cash take-home', amount: cash, total: true });
             const support = [];
             if (s.childBenefitCredit) support.push({ label: 'Child benefit received', amount: s.childBenefitCredit });
@@ -218,6 +277,10 @@ const APP_OPTIONS = {
 
         pensionEnabled() { return this.household.employmentType !== 'Pension income'; },
         workplacePension() { return !TaxEngine.isSelfEmploymentType(this.household) && this.pensionEnabled; },
+        investmentsTotal() {
+            const i = this.summary.investments;
+            return i ? i.savings + i.dividends + i.gains + (Number(this.household.rentalIncome) || 0) : 0;
+        },
         pensionActive() { return Number(this.household.pensionContribution) > 0; },
         pensionDisplay() {
             const v = this.household.pensionContribution;
@@ -255,9 +318,18 @@ const APP_OPTIONS = {
         },
         incomeLabel() {
             if (this.household.employmentType === 'Within IR35') return 'Annual contract income, including employer NI';
-            if (TaxEngine.isSelfEmploymentType(this.household)) return 'Annual profit before tax';
+            if (TaxEngine.isSelfEmploymentType(this.household)) return 'Annual taxable profit';
             if (this.household.employmentType === 'Pension income') return 'Annual pension income before tax';
             return 'Annual income before tax and pension contributions';
+        },
+        incomeTip() {
+            const extras = ' Use the boxes below the slider to add benefits in kind, pension income and investments. The chart follows this figure; the amounts in the boxes stay fixed.';
+            if (TaxEngine.isSelfEmploymentType(this.household)) {
+                return 'Your profit after the tax adjustments, not the figure in your accounts: add back disallowed expenses such as entertaining and depreciation, and deduct capital allowances. For a partner, your share of the partnership\'s taxable profit.' + extras;
+            }
+            if (this.household.employmentType === 'Within IR35') return 'The total the client pays for your work, out of which employer NI comes before your pay.' + extras;
+            if (this.household.employmentType === 'Pension income') return 'Your pension income before tax. Use the Pension income box only for pensions you haven\'t included here.' + extras;
+            return 'Your salary, before tax, NI and pension contributions.' + extras;
         },
         childcareCliff() { return this.activeData ? TaxEngine.childcareCliff(this.activeData, this.household, this.chartMax) : null; },
         comparisonNote() {
@@ -327,18 +399,20 @@ const APP_OPTIONS = {
         sliderTicks() { return [0, 0.25, 0.5, 0.75, 1].map(f => this.fmtMoney(f * this.sliderMax)); },
         // where each pound of gross pay goes, for the take-home bar.
         takeHomeSplit() {
-            const s = this.summary, gross = Math.max(1, this.income);
+            const s = this.summary, gross = Math.max(1, s.cashIncome);
             const cash = Math.round(s.cashTakeHome);
             const deductions = [
                 { key: 'tax', label: 'Income tax', amount: s.incomeTaxAmount },
                 { key: 'ni', label: s.employerNi ? 'NI including employer NI' : 'National insurance', amount: s.ni.total + s.employerNi }
             ];
             if (this.household.includeStudentLoan) deductions.push({ key: 'loan', label: 'Student loan', amount: s.loanRepayments });
+            if (s.capitalGainsTax > 0) deductions.push({ key: 'cgt', label: 'Capital gains tax', amount: s.capitalGainsTax });
             if (s.pensionEmployeeOutlay > 0) {
                 deductions.push({ key: 'pension', label: s.pensionMethod === 'relief_at_source' ? 'Paid to your pension provider' : 'Pension from pay',
                     amount: s.pensionEmployeeOutlay, fixed: true });
             }
-            this.roundToTotal(deductions, Math.round(this.income) - cash);
+            if (s.otherSacrifice > 0) deductions.push({ key: 'other', label: 'Other salary sacrifice', amount: s.otherSacrifice, fixed: true });
+            this.roundToTotal(deductions, Math.round(s.cashIncome) - cash);
             return [{ key: 'home', label: 'Take-home', amount: cash }, ...deductions]
                 .filter(p => p.amount > 0).map(p => ({ ...p, pct: 100 * p.amount / gross }));
         },
@@ -416,11 +490,13 @@ const APP_OPTIONS = {
         // everything the user has set, in words, for the exports
         exportSettings() {
             const h = this.household;
-            const methods = { sacrifice: 'salary sacrifice', netpay: 'workplace pension (net pay)', sipp: 'SIPP or personal pension' };
+            const methods = { sacrifice: 'salary sacrifice', netpay: 'workplace pension (net pay)', sipp: 'relief at source (SIPP, personal pension, NEST and similar)' };
             const plan = this.loanPlans.find(p => p.id === h.studentLoanPlan);
             const pension = !this.pensionActive ? 'None'
                 : (h.pensionBasis === 'percent' ? `${h.pensionContribution}% of pay` : this.fmtMoney(Number(h.pensionContribution)) + ' a year')
                   + ` by ${methods[h.pensionMethod] || h.pensionMethod} (gross ${this.fmtMoney(this.summary.pensionGross)})`;
+            const yearly = v => (v > 0 ? this.fmtMoney(v) + ' a year' : 'None');
+            const inv = this.summary.investments || { savings: 0, dividends: 0, gains: 0 };
             return [
                 ['Tax year', '2026/27'],
                 [this.incomeLabel, this.fmtMoney(this.income)],
@@ -431,6 +507,15 @@ const APP_OPTIONS = {
                 ['Pension contributions', pension],
                 ['Student loan', h.includeStudentLoan && plan ? plan.label : 'None'],
                 ['Childcare support at risk above £100,000', h.childcareSubsidyAmount ? this.fmtMoney(h.childcareSubsidyAmount) + ' a year' : 'None'],
+                ['Other salary sacrifice', yearly(this.summary.otherSacrifice)],
+                ['Benefits in kind', yearly(this.summary.benefitsInKind)],
+                ['Pension income on top', yearly(this.summary.pensionIncome)],
+                ['Savings interest', yearly(inv.savings)],
+                ['Dividends', yearly(inv.dividends)],
+                ['Capital gains', yearly(inv.gains)],
+                ['Rental income', yearly(Number(h.rentalIncome) || 0)],
+                ['Rental expenses', yearly(Number(h.rentalExpenses) || 0)],
+                ['Rental finance costs', yearly(Number(h.rentalFinanceCosts) || 0)],
                 ['Compared with', this.compareDataset ? this.datasetLabel(this.compareDataset) : 'None']
             ];
         },
@@ -475,6 +560,21 @@ const APP_OPTIONS = {
             if (t.marginalRate >= 50) return null;
             const how = { sacrifice: 'by salary sacrifice', netpay: 'through your workplace pension', sipp: 'into a personal pension' }[method];
             return { trap, extra, how, cost: s.netIncome - t.netIncome, more: this.pensionActive, settings: trial };
+        },
+        // how much more you can earn before the next trap, shown when it's close
+        headroomNote() {
+            const s = this.summary, h = this.household;
+            if (!this.activeData || this.wayOut) return null;
+            const ani = s.adjustedNetIncome;
+            const traps = [];
+            if (h.children > 0) traps.push({ at: this.activeData['HICBC start'], what: 'the child benefit charge starts' });
+            traps.push({ at: this.activeData['allowance withdrawal threshold'], what: (this.scotland ? 'the personal allowance trap' : 'the 60% trap')
+                + (h.childcareSubsidyAmount > 0 ? ' and childcare cliff start' : ' starts') });
+            const next = traps.find(t => ani <= t.at);
+            if (!next || next.at - ani > HEADROOM_WINDOW) return null;
+            const room = TaxEngine.headroom(this.income, this.activeData, h, next.at, 2 * HEADROOM_WINDOW);
+            if (room === null || room > HEADROOM_WINDOW) return null;
+            return { what: next.what, room: Math.floor(room) };
         },
         sliderFill() { return { '--fill': (100 * Math.min(this.income, this.sliderMax) / this.sliderMax) + '%' }; },
         // short plan name for the student loan button
@@ -554,6 +654,8 @@ const APP_OPTIONS = {
         reload() { window.location.reload(); },
         emptySummary() {
             return {
+                cashIncome: 0, totalIncome: 0, capitalGainsTax: 0, savingsTax: 0, dividendTax: 0, benefitsInKind: 0,
+                pensionIncome: 0, otherSacrifice: 0, reliefViaReturn: 0, investments: { savings: 0, dividends: 0, gains: 0 },
                 income: 0, netIncome: 0, cashTakeHome: 0, cashWithBenefits: 0, loanRepayments: 0, incomeTaxAmount: 0, taxRate: 0, pensionNetCost: 0, adjustedNetIncome: 0, totalTax: 0, effectiveRate: 0, marginalRate: 0,
                 employerNi: 0, childBenefitCredit: 0, childcareCredit: 0,
                 pensionGross: 0, pensionEmployeeOutlay: 0,
@@ -612,13 +714,7 @@ const APP_OPTIONS = {
 
         onIncomeFocus(e) { this.editing = true; e.target.select(); },
 
-        parseEntry(text, maximum) {
-            const raw = text.trim().replace(/^£\s*/, '');
-            if (!raw) return 0;
-            if (!/^(?:\d+|\d{1,3}(?:,\d{3})+)(?:\.\d{0,2})?$/.test(raw)) return null;
-            const value = Number(raw.replace(/,/g, ''));
-            return Number.isFinite(value) && value >= 0 && value <= maximum ? value : null;
-        },
+        parseEntry(text, maximum) { return parseMoney(text, maximum); },
 
         onIncomeInput(e) {
             this.incomeDisplay = e.target.value;
@@ -653,6 +749,7 @@ const APP_OPTIONS = {
                 { key: 'taper', label: 'Lost allowance', amount: taper },
                 { key: 'ni', label: 'NI', amount: (b.ni.total + b.employerNi) - (a.ni.total + a.employerNi) },
                 { key: 'loan', label: 'Student loan', amount: b.loanRepayments - a.loanRepayments },
+                { key: 'cgt', label: 'Capital gains tax', amount: (b.capitalGainsTax || 0) - (a.capitalGainsTax || 0) },
                 { key: 'cb', label: 'Child benefit charge', amount: dClaw },
                 { key: 'cc', label: 'Childcare lost', amount: a.childcareCredit - b.childcareCredit },
                 { key: 'pension', label: 'To your pension', amount: (b.pensionEmployeeOutlay || 0) - (a.pensionEmployeeOutlay || 0) }
@@ -664,7 +761,7 @@ const APP_OPTIONS = {
         },
         splitHtml(gross, data) {
             const { kept, parts } = this.splitNext(gross, data);
-            const colours = { kept: '#2B52D8', tax: '#4f586c', taper: '#c98a12', ni: '#8e97ab', loan: '#bcc3d2', cb: '#e0a83a', cc: '#f0cf85', pension: '#a9bbf2' };
+            const colours = { kept: '#2B52D8', tax: '#4f586c', taper: '#c98a12', ni: '#8e97ab', loan: '#bcc3d2', cgt: '#7d8496', cb: '#e0a83a', cc: '#f0cf85', pension: '#a9bbf2' };
             const segs = [...(kept > 0 ? [{ key: 'kept', amount: kept }] : []), ...parts.filter(p => p.amount > 0)];
             const total = segs.reduce((t, p) => t + p.amount, 0) || 1;
             const bar = segs.map(p => `<span style="flex:0 0 ${100 * p.amount / total}%;background:${colours[p.key]}"></span>`).join('');
@@ -742,14 +839,15 @@ const APP_OPTIONS = {
             }
             rows.push([],
                 ['NOTES'],
-                ['Annual estimates for one income. Universal Credit isn’t included. Childcare support is a value, not cash pay; eligibility is not assessed.'],
+                ['Annual estimates for one person. Universal Credit isn’t included. Childcare support is a value, not cash pay; eligibility is not assessed.'],
+                ['Income GBP is the main income. Benefits in kind, pension income, investments, rental income and other salary sacrifice are fixed amounts on top. Tax deducted at source on interest or dividends isn’t taken into account.'],
                 ['Standard tax code. Marginal rates are for the next £1, with the personal allowance, child benefit charge and annual allowance tapers smoothed; pension saving is not tax.'],
                 ['Statutory columns use the actual rules, rounding and steps. Plotted columns use the smoothed tapers drawn on the chart.'],
                 ['Current regime date', this.activeData._meta.regimeDate], [],
                 []);
             // one chart-data table per set of rules, each titled with what it shows
             const measure = { marginal: 'Marginal tax rate', effective: 'Effective tax rate', net: 'Net v gross income' }[this.chartType];
-            const header = ['Income GBP', 'Cash take-home GBP', 'Income tax, NI and tax charges GBP', 'Student loans GBP',
+            const header = ['Income GBP', 'Cash take-home GBP', 'Income tax, NI, CGT and tax charges GBP', 'Student loans GBP',
                 'Child benefit GBP', 'Childcare support GBP', 'Gross pension GBP', 'Net pension cost GBP',
                 'Net income including support GBP', 'Effective rate %',
                 'Marginal rate on next £1 %', 'Plotted net income GBP', 'Plotted effective rate %'];
@@ -760,7 +858,7 @@ const APP_OPTIONS = {
                     const plotted = TaxEngine.totals(income, data, this.household, 'smooth');
                     rows.push([income, s.cashTakeHome, s.totalTax, s.loanRepayments, s.childBenefitCredit,
                         s.childcareCredit, s.pensionGross, s.pensionNetCost, s.netIncome, s.effectiveRate,
-                        s.marginalRate, plotted.netIncome, income === 0 ? 0 : plotted.adjustedTax / income * 100]);
+                        s.marginalRate, plotted.netIncome, plotted.totalIncome === 0 ? 0 : plotted.adjustedTax / plotted.totalIncome * 100]);
                 }
                 rows.push([]);
             };
@@ -782,8 +880,10 @@ const APP_OPTIONS = {
                 { label: 'Total national insurance', amount: s.ni.total + s.employerNi }
             ];
             if (this.household.includeStudentLoan) rows.push({ label: 'Student loan repayments', amount: s.loanRepayments });
+            if (s.capitalGainsTax > 0) rows.push({ label: 'Capital gains tax', amount: s.capitalGainsTax });
             if (s.pensionEmployeeOutlay > 0) rows.push({ label: 'Your pension contributions', amount: s.pensionEmployeeOutlay, fixed: true });
-            this.roundToTotal(rows, Math.round(s.income) - cash);
+            if (s.otherSacrifice > 0) rows.push({ label: 'Other salary sacrifice', amount: s.otherSacrifice, fixed: true });
+            this.roundToTotal(rows, Math.round(s.cashIncome) - cash);
             rows.push({ label: 'Cash take-home', amount: cash, kind: 'total' });
             const support = [];
             if (s.childBenefitCredit) support.push({ label: 'Child benefit kept', amount: s.childBenefitCredit });
@@ -792,6 +892,10 @@ const APP_OPTIONS = {
                 const net = Math.round(s.netIncome);
                 this.roundToTotal(support, net - cash);
                 rows.push(...support, { label: 'Net income including support', amount: net, kind: 'total' });
+            }
+            // with pension income or investments, say what the deductions come out of
+            if (Math.round(s.cashIncome) !== Math.round(s.income)) {
+                rows.unshift({ label: 'Income received, including pensions, investments and rent', amount: Math.round(s.cashIncome), kind: 'total' });
             }
             return rows.map(({ label, amount, kind }) => ({ label, amount, kind }));
         },

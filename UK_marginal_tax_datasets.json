@@ -16,6 +16,22 @@
         "rate": 0.45
       }
     ],
+    "income tax - savings": [
+      {
+        "name": "basic",
+        "rate": 0.2,
+        "threshold": 37700
+      },
+      {
+        "name": "higher",
+        "rate": 0.4,
+        "threshold": 125140
+      },
+      {
+        "name": "additional",
+        "rate": 0.45
+      }
+    ],
     "income tax - dividends": [
       {
         "name": "basic",
@@ -32,6 +48,22 @@
         "rate": 0.3935
       }
     ],
+    "savings and dividend allowances": {
+      "starting rate for savings band": 5000,
+      "personal savings allowance basic": 1000,
+      "personal savings allowance higher": 500,
+      "personal savings allowance additional": 0,
+      "dividend allowance": 500
+    },
+    "capital gains tax": {
+      "annual exempt amount": 3000,
+      "basic rate": 0.18,
+      "higher rate": 0.24
+    },
+    "property income": {
+      "property allowance": 1000,
+      "finance cost relief rate": 0.2
+    },
     "statutory personal allowance": 12570,
     "allowance withdrawal threshold": 100000,
     "allowance withdrawal rate": 0.5,
@@ -108,6 +140,7 @@
         "threshold": 21000
       }
     },
+    "student loan unearned income threshold": 2000,
     "pension relief at source rate": 0.2,
     "pension relief at source basic amount": 3600,
     "marriage allowance relief rate": 0.2,
@@ -129,7 +162,12 @@
         "pension relief": "https://www.gov.uk/tax-on-your-private-pension/pension-tax-relief",
         "annual allowance": "https://www.gov.uk/tax-on-your-private-pension/annual-allowance",
         "annual allowance taper": "https://www.gov.uk/guidance/pension-schemes-work-out-your-tapered-annual-allowance",
-        "marriage allowance": "https://www.gov.uk/marriage-allowance"
+        "marriage allowance": "https://www.gov.uk/marriage-allowance",
+        "savings and dividends": "https://www.gov.uk/government/publications/rates-and-allowances-income-tax/income-tax-rates-and-allowances-current-and-past",
+        "personal savings allowance": "https://www.gov.uk/apply-tax-free-interest-on-savings",
+        "capital gains tax": "https://www.gov.uk/capital-gains-tax/rates",
+        "property income": "https://www.gov.uk/guidance/income-tax-when-you-rent-out-a-property-working-out-your-rental-income",
+        "student loan unearned income": "https://www.gov.uk/hmrc-internal-manuals/collection-of-student-loans-manual/cslm16035"
       }
     }
   },
@@ -165,6 +203,22 @@
         "rate": 0.48
       }
     ],
+    "income tax - savings": [
+      {
+        "name": "basic",
+        "rate": 0.2,
+        "threshold": 37700
+      },
+      {
+        "name": "higher",
+        "rate": 0.4,
+        "threshold": 125140
+      },
+      {
+        "name": "additional",
+        "rate": 0.45
+      }
+    ],
     "income tax - dividends": [
       {
         "name": "basic",
@@ -181,6 +235,22 @@
         "rate": 0.3935
       }
     ],
+    "savings and dividend allowances": {
+      "starting rate for savings band": 5000,
+      "personal savings allowance basic": 1000,
+      "personal savings allowance higher": 500,
+      "personal savings allowance additional": 0,
+      "dividend allowance": 500
+    },
+    "capital gains tax": {
+      "annual exempt amount": 3000,
+      "basic rate": 0.18,
+      "higher rate": 0.24
+    },
+    "property income": {
+      "property allowance": 1000,
+      "finance cost relief rate": 0.2
+    },
     "statutory personal allowance": 12570,
     "allowance withdrawal threshold": 100000,
     "allowance withdrawal rate": 0.5,
@@ -257,6 +327,7 @@
         "threshold": 21000
       }
     },
+    "student loan unearned income threshold": 2000,
     "pension relief at source rate": 0.2,
     "pension relief at source basic amount": 3600,
     "marriage allowance relief rate": 0.2,
@@ -278,12 +349,33 @@
         "pension relief": "https://www.gov.uk/tax-on-your-private-pension/pension-tax-relief",
         "annual allowance": "https://www.gov.uk/tax-on-your-private-pension/annual-allowance",
         "annual allowance taper": "https://www.gov.uk/guidance/pension-schemes-work-out-your-tapered-annual-allowance",
-        "marriage allowance": "https://www.gov.uk/marriage-allowance"
+        "marriage allowance": "https://www.gov.uk/marriage-allowance",
+        "savings and dividends": "https://www.gov.uk/government/publications/rates-and-allowances-income-tax/income-tax-rates-and-allowances-current-and-past",
+        "personal savings allowance": "https://www.gov.uk/apply-tax-free-interest-on-savings",
+        "capital gains tax": "https://www.gov.uk/capital-gains-tax/rates",
+        "property income": "https://www.gov.uk/guidance/income-tax-when-you-rent-out-a-property-working-out-your-rental-income",
+        "student loan unearned income": "https://www.gov.uk/hmrc-internal-manuals/collection-of-student-loans-manual/cslm16035"
       }
     }
   },
   "Reform UK personal allowance (rUK)": {
     "income tax": [
+      {
+        "name": "basic",
+        "rate": 0.2,
+        "threshold": 37700
+      },
+      {
+        "name": "higher",
+        "rate": 0.4,
+        "threshold": 125140
+      },
+      {
+        "name": "additional",
+        "rate": 0.45
+      }
+    ],
+    "income tax - savings": [
       {
         "name": "basic",
         "rate": 0.2,
@@ -315,6 +407,22 @@
         "rate": 0.3935
       }
     ],
+    "savings and dividend allowances": {
+      "starting rate for savings band": 5000,
+      "personal savings allowance basic": 1000,
+      "personal savings allowance higher": 500,
+      "personal savings allowance additional": 0,
+      "dividend allowance": 500
+    },
+    "capital gains tax": {
+      "annual exempt amount": 3000,
+      "basic rate": 0.18,
+      "higher rate": 0.24
+    },
+    "property income": {
+      "property allowance": 1000,
+      "finance cost relief rate": 0.2
+    },
     "statutory personal allowance": 15000,
     "allowance withdrawal threshold": 100000,
     "allowance withdrawal rate": 0.5,
@@ -391,6 +499,7 @@
         "threshold": 21000
       }
     },
+    "student loan unearned income threshold": 2000,
     "pension relief at source rate": 0.2,
     "pension relief at source basic amount": 3600,
     "marriage allowance relief rate": 0.2,
@@ -417,7 +526,12 @@
         "annual allowance": "https://www.gov.uk/tax-on-your-private-pension/annual-allowance",
         "annual allowance taper": "https://www.gov.uk/guidance/pension-schemes-work-out-your-tapered-annual-allowance",
         "marriage allowance": "https://www.gov.uk/marriage-allowance",
-        "proposal": "https://www.cityam.com/jenrick-pledges-to-raise-tax-free-personal-allowance-to-15000/"
+        "proposal": "https://www.cityam.com/jenrick-pledges-to-raise-tax-free-personal-allowance-to-15000/",
+        "savings and dividends": "https://www.gov.uk/government/publications/rates-and-allowances-income-tax/income-tax-rates-and-allowances-current-and-past",
+        "personal savings allowance": "https://www.gov.uk/apply-tax-free-interest-on-savings",
+        "capital gains tax": "https://www.gov.uk/capital-gains-tax/rates",
+        "property income": "https://www.gov.uk/guidance/income-tax-when-you-rent-out-a-property-working-out-your-rental-income",
+        "student loan unearned income": "https://www.gov.uk/hmrc-internal-manuals/collection-of-student-loans-manual/cslm16035"
       },
       "baseDataset": "2026-27 UK",
       "description": "£15,000 personal allowance, with the existing taper and taxable income bands. All other rules use 2026/27."
@@ -455,6 +569,22 @@
         "rate": 0.48
       }
     ],
+    "income tax - savings": [
+      {
+        "name": "basic",
+        "rate": 0.2,
+        "threshold": 37700
+      },
+      {
+        "name": "higher",
+        "rate": 0.4,
+        "threshold": 125140
+      },
+      {
+        "name": "additional",
+        "rate": 0.45
+      }
+    ],
     "income tax - dividends": [
       {
         "name": "basic",
@@ -471,6 +601,22 @@
         "rate": 0.3935
       }
     ],
+    "savings and dividend allowances": {
+      "starting rate for savings band": 5000,
+      "personal savings allowance basic": 1000,
+      "personal savings allowance higher": 500,
+      "personal savings allowance additional": 0,
+      "dividend allowance": 500
+    },
+    "capital gains tax": {
+      "annual exempt amount": 3000,
+      "basic rate": 0.18,
+      "higher rate": 0.24
+    },
+    "property income": {
+      "property allowance": 1000,
+      "finance cost relief rate": 0.2
+    },
     "statutory personal allowance": 15000,
     "allowance withdrawal threshold": 100000,
     "allowance withdrawal rate": 0.5,
@@ -547,6 +693,7 @@
         "threshold": 21000
       }
     },
+    "student loan unearned income threshold": 2000,
     "pension relief at source rate": 0.2,
     "pension relief at source basic amount": 3600,
     "marriage allowance relief rate": 0.2,
@@ -573,7 +720,12 @@
         "annual allowance": "https://www.gov.uk/tax-on-your-private-pension/annual-allowance",
         "annual allowance taper": "https://www.gov.uk/guidance/pension-schemes-work-out-your-tapered-annual-allowance",
         "marriage allowance": "https://www.gov.uk/marriage-allowance",
-        "proposal": "https://www.cityam.com/jenrick-pledges-to-raise-tax-free-personal-allowance-to-15000/"
+        "proposal": "https://www.cityam.com/jenrick-pledges-to-raise-tax-free-personal-allowance-to-15000/",
+        "savings and dividends": "https://www.gov.uk/government/publications/rates-and-allowances-income-tax/income-tax-rates-and-allowances-current-and-past",
+        "personal savings allowance": "https://www.gov.uk/apply-tax-free-interest-on-savings",
+        "capital gains tax": "https://www.gov.uk/capital-gains-tax/rates",
+        "property income": "https://www.gov.uk/guidance/income-tax-when-you-rent-out-a-property-working-out-your-rental-income",
+        "student loan unearned income": "https://www.gov.uk/hmrc-internal-manuals/collection-of-student-loans-manual/cslm16035"
       },
       "baseDataset": "2026-27 Scotland",
       "description": "£15,000 personal allowance, with the existing taper and taxable income bands. All other rules use 2026/27."
@@ -581,6 +733,22 @@
   },
   "Green employee NI (rUK)": {
     "income tax": [
+      {
+        "name": "basic",
+        "rate": 0.2,
+        "threshold": 37700
+      },
+      {
+        "name": "higher",
+        "rate": 0.4,
+        "threshold": 125140
+      },
+      {
+        "name": "additional",
+        "rate": 0.45
+      }
+    ],
+    "income tax - savings": [
       {
         "name": "basic",
         "rate": 0.2,
@@ -612,6 +780,22 @@
         "rate": 0.3935
       }
     ],
+    "savings and dividend allowances": {
+      "starting rate for savings band": 5000,
+      "personal savings allowance basic": 1000,
+      "personal savings allowance higher": 500,
+      "personal savings allowance additional": 0,
+      "dividend allowance": 500
+    },
+    "capital gains tax": {
+      "annual exempt amount": 3000,
+      "basic rate": 0.18,
+      "higher rate": 0.24
+    },
+    "property income": {
+      "property allowance": 1000,
+      "finance cost relief rate": 0.2
+    },
     "statutory personal allowance": 12570,
     "allowance withdrawal threshold": 100000,
     "allowance withdrawal rate": 0.5,
@@ -688,6 +872,7 @@
         "threshold": 21000
       }
     },
+    "student loan unearned income threshold": 2000,
     "pension relief at source rate": 0.2,
     "pension relief at source basic amount": 3600,
     "marriage allowance relief rate": 0.2,
@@ -712,7 +897,12 @@
         "annual allowance": "https://www.gov.uk/tax-on-your-private-pension/annual-allowance",
         "annual allowance taper": "https://www.gov.uk/guidance/pension-schemes-work-out-your-tapered-annual-allowance",
         "marriage allowance": "https://www.gov.uk/marriage-allowance",
-        "proposal": "https://greenparty.org.uk/2024/06/12/greens-pledge-investment-to-mend-broken-britain/"
+        "proposal": "https://greenparty.org.uk/2024/06/12/greens-pledge-investment-to-mend-broken-britain/",
+        "savings and dividends": "https://www.gov.uk/government/publications/rates-and-allowances-income-tax/income-tax-rates-and-allowances-current-and-past",
+        "personal savings allowance": "https://www.gov.uk/apply-tax-free-interest-on-savings",
+        "capital gains tax": "https://www.gov.uk/capital-gains-tax/rates",
+        "property income": "https://www.gov.uk/guidance/income-tax-when-you-rent-out-a-property-working-out-your-rental-income",
+        "student loan unearned income": "https://www.gov.uk/hmrc-internal-manuals/collection-of-student-loans-manual/cslm16035"
       },
       "baseDataset": "2026-27 UK",
       "description": "8% employee NI above £50,270, instead of 2%. All other rules use 2026/27."
@@ -750,6 +940,22 @@
         "rate": 0.48
       }
     ],
+    "income tax - savings": [
+      {
+        "name": "basic",
+        "rate": 0.2,
+        "threshold": 37700
+      },
+      {
+        "name": "higher",
+        "rate": 0.4,
+        "threshold": 125140
+      },
+      {
+        "name": "additional",
+        "rate": 0.45
+      }
+    ],
     "income tax - dividends": [
       {
         "name": "basic",
@@ -766,6 +972,22 @@
         "rate": 0.3935
       }
     ],
+    "savings and dividend allowances": {
+      "starting rate for savings band": 5000,
+      "personal savings allowance basic": 1000,
+      "personal savings allowance higher": 500,
+      "personal savings allowance additional": 0,
+      "dividend allowance": 500
+    },
+    "capital gains tax": {
+      "annual exempt amount": 3000,
+      "basic rate": 0.18,
+      "higher rate": 0.24
+    },
+    "property income": {
+      "property allowance": 1000,
+      "finance cost relief rate": 0.2
+    },
     "statutory personal allowance": 12570,
     "allowance withdrawal threshold": 100000,
     "allowance withdrawal rate": 0.5,
@@ -842,6 +1064,7 @@
         "threshold": 21000
       }
     },
+    "student loan unearned income threshold": 2000,
     "pension relief at source rate": 0.2,
     "pension relief at source basic amount": 3600,
     "marriage allowance relief rate": 0.2,
@@ -866,7 +1089,12 @@
         "annual allowance": "https://www.gov.uk/tax-on-your-private-pension/annual-allowance",
         "annual allowance taper": "https://www.gov.uk/guidance/pension-schemes-work-out-your-tapered-annual-allowance",
         "marriage allowance": "https://www.gov.uk/marriage-allowance",
-        "proposal": "https://greenparty.org.uk/2024/06/12/greens-pledge-investment-to-mend-broken-britain/"
+        "proposal": "https://greenparty.org.uk/2024/06/12/greens-pledge-investment-to-mend-broken-britain/",
+        "savings and dividends": "https://www.gov.uk/government/publications/rates-and-allowances-income-tax/income-tax-rates-and-allowances-current-and-past",
+        "personal savings allowance": "https://www.gov.uk/apply-tax-free-interest-on-savings",
+        "capital gains tax": "https://www.gov.uk/capital-gains-tax/rates",
+        "property income": "https://www.gov.uk/guidance/income-tax-when-you-rent-out-a-property-working-out-your-rental-income",
+        "student loan unearned income": "https://www.gov.uk/hmrc-internal-manuals/collection-of-student-loans-manual/cslm16035"
       },
       "baseDataset": "2026-27 Scotland",
       "description": "8% employee NI above £50,270, instead of 2%. All other rules use 2026/27."
