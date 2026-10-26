@@ -198,7 +198,12 @@ of a spurious 98.2% reading in the 2025 chart.
         if (['Retired/State pension age', 'Working past State Pension age', 'Pension income'].includes(h.employmentType)) {
             return null;
         }
-        return isSelfEmploymentType(h) ? 'NI class 4 (self-employed)' : 'NI class 1 (employees)';
+        if (isSelfEmploymentType(h)) {
+            return 'NI class 4 (self-employed)';
+        }
+        // Someone receiving the state pension has reached State Pension age, so no employee NI.
+        // Class 4 runs to the end of that tax year, so the self-employed keep it.
+        return positive(h.statePension) > 0 ? null : 'NI class 1 (employees)';
     }
 
     function activeStudentLoanPlan(h, dataset) {
